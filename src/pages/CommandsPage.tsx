@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useAppStore } from '@/store';
-import { Play, Plus, X, Trash2, Edit3, Clock, Check } from 'lucide-react';
+import { Play, Plus, X, Trash2, Clock, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { QuickCommand, TimeOption } from '@/types';
 import { EMOJI_OPTIONS } from '@/constants';
