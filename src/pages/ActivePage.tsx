@@ -2,9 +2,12 @@ import { useMemo, useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
 import { Check, Trash2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useI18n } from '@/hooks/useI18n';
+import { formatMinutesShort, formatTime } from '@/utils/time';
 
 export function ActivePage() {
   const { reminders, completeReminder, removeReminder } = useAppStore();
+  const { copy, formatCount } = useI18n();
   const activeReminders = useMemo(
     () => reminders.filter((r) => r.status === 'pending'),
     [reminders]
@@ -22,20 +25,22 @@ export function ActivePage() {
   return (
     <div className="p-6">
       <header className="mb-8">
-        <h1 className="text-2xl font-bold">Активні нагадування</h1>
-        <p className="text-gray-400 font-medium">{activeReminders.length} думок</p>
+        <h1 className="text-2xl font-bold">{copy.active.title}</h1>
+        <p className="text-gray-400 font-medium">
+          {formatCount(activeReminders.length, 'thought')}
+        </p>
       </header>
 
       <div className="space-y-8">
         {activeReminders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-300">
             <span className="text-6xl mb-4">🌙</span>
-            <p className="font-bold">Поки що немає планів</p>
+            <p className="font-bold">{copy.active.emptyTitle}</p>
           </div>
         ) : (
           <>
             {nearest.length > 0 && (
-              <Section title="НАЙБЛИЖЧІ">
+              <Section title={copy.active.sections.nearest}>
                 {nearest.map((r) => (
                   <ReminderCard
                     key={r.id}
@@ -48,7 +53,7 @@ export function ActivePage() {
             )}
 
             {today.length > 0 && (
-              <Section title="СЬОГОДНІ">
+              <Section title={copy.active.sections.today}>
                 {today.map((r) => (
                   <ReminderCard
                     key={r.id}
@@ -61,7 +66,7 @@ export function ActivePage() {
             )}
 
             {later.length > 0 && (
-              <Section title="ПІЗНІШЕ">
+              <Section title={copy.active.sections.later}>
                 {later.map((r) => (
                   <ReminderCard
                     key={r.id}
@@ -100,6 +105,7 @@ interface ReminderCardProps {
 }
 
 function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
+  const { copy, language } = useI18n();
   const [timeLeft, setTimeLeft] = useState(reminder.targetTime - Date.now());
 
   useEffect(() => {
@@ -111,15 +117,9 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
 
   const minutesLeft = Math.floor(timeLeft / 60000);
 
-  const formatTime = (ts: number) => {
-    const d = new Date(ts);
-    return d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-  };
-
   const getTimeLabel = () => {
-    if (timeLeft < 0) return 'Пропущено';
-    if (minutesLeft < 60) return `${minutesLeft} хв`;
-    return `${(minutesLeft / 60).toFixed(1)} год`;
+    if (timeLeft < 0) return copy.active.missed;
+    return formatMinutesShort(minutesLeft, language);
   };
 
   return (
@@ -136,14 +136,14 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
         </div>
         <div>
           <h4 className="font-bold text-gray-800 leading-tight mb-1">
-            {reminder.text || 'Нагадування'}
+            {reminder.text || copy.active.reminderFallback}
           </h4>
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-400">
             <Clock size={12} />
-            <span>{formatTime(reminder.targetTime)}</span>
+            <span>{formatTime(reminder.targetTime, language)}</span>
             <span>·</span>
             <span className={timeLeft < 15 * 60000 ? 'text-orange-500' : ''}>
-              через {getTimeLabel()}
+              {timeLeft < 0 ? getTimeLabel() : `${copy.active.inPrefix} ${getTimeLabel()}`}
             </span>
           </div>
         </div>

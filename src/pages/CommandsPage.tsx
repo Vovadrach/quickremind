@@ -4,6 +4,8 @@ import { Play, Plus, X, Trash2, Clock, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { QuickCommand, TimeOption } from '@/types';
 import { EMOJI_OPTIONS } from '@/constants';
+import { useI18n } from '@/hooks/useI18n';
+import { formatMinutesShort } from '@/utils/time';
 
 export function CommandsPage() {
   const {
@@ -15,6 +17,7 @@ export function CommandsPage() {
     deleteCommand,
     showToast
   } = useAppStore();
+  const { copy } = useI18n();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
@@ -50,7 +53,7 @@ export function CommandsPage() {
         categoryId: data.categoryId,
         timeOptions: data.timeOptions,
       });
-      showToast('Команду оновлено!', 'success', '✅');
+      showToast(copy.toasts.commandUpdated, 'success', '✅');
     } else {
       addCommand({
         name: data.name,
@@ -64,13 +67,13 @@ export function CommandsPage() {
 
   const handleDelete = (id: string) => {
     deleteCommand(id);
-    showToast('Команду видалено', 'info', '🗑️');
+    showToast(copy.toasts.commandDeleted, 'info', '🗑️');
   };
 
   return (
     <div className="p-6 pb-24">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Швидкі команди</h1>
+        <h1 className="text-2xl font-bold">{copy.commands.title}</h1>
         <button
           onClick={() => setIsEditMode(!isEditMode)}
           className={`font-bold text-2xl w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
@@ -88,7 +91,7 @@ export function CommandsPage() {
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="🔍 Пошук команди..."
+          placeholder={copy.commands.searchPlaceholder}
           className="w-full bg-white border border-gray-100 rounded-2xl py-3 px-5 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
         />
       </div>
@@ -117,14 +120,14 @@ export function CommandsPage() {
 
         {filteredCommands.length === 0 && searchTerm && (
           <div className="text-center py-10 text-gray-400 font-medium">
-            Команд не знайдено 😕
+            {copy.commands.emptySearch}
           </div>
         )}
 
         {filteredCommands.length === 0 && !searchTerm && (
           <div className="text-center py-10 text-gray-400 font-medium">
-            <p className="mb-4">Ще немає команд</p>
-            <p className="text-sm">Створіть першу команду!</p>
+            <p className="mb-4">{copy.commands.emptyTitle}</p>
+            <p className="text-sm">{copy.commands.emptySubtitle}</p>
           </div>
         )}
 
@@ -133,7 +136,7 @@ export function CommandsPage() {
           className="w-full border-2 border-dashed border-gray-200 rounded-3xl py-6 flex flex-col items-center gap-2 text-gray-400 font-bold transition-all hover:border-blue-200 hover:text-blue-400 hover:bg-blue-50/30 active:scale-[0.98]"
         >
           <Plus size={24} />
-          Нова команда
+          {copy.commands.newCommand}
         </button>
       </div>
 
@@ -174,6 +177,7 @@ interface CommandCardProps {
 
 function CommandCard({ command, isEditMode, onExecute, onEdit, onDelete }: CommandCardProps) {
   const { selectCommandTime, selectedCommandTimeIndex } = useAppStore();
+  const { copy } = useI18n();
   const selectedIdx = selectedCommandTimeIndex[command.id] ?? 0;
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -250,7 +254,7 @@ function CommandCard({ command, isEditMode, onExecute, onEdit, onDelete }: Comma
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-blue-600 flex items-center justify-center text-white font-bold"
           >
-            ЗЛОВЛЕНО! ✨
+            {copy.commands.successOverlay}
           </motion.div>
         )}
       </AnimatePresence>
@@ -275,11 +279,12 @@ interface CommandEditorModalProps {
 }
 
 function CommandEditorModal({ mode, command, categories, onSave, onClose }: CommandEditorModalProps) {
+  const { copy, language } = useI18n();
   const [name, setName] = useState(command?.name || '');
   const [icon, setIcon] = useState(command?.icon || '⚡');
   const [categoryId, setCategoryId] = useState(command?.categoryId || categories[0]?.id || 'daily');
   const [timeOptions, setTimeOptions] = useState<TimeOption[]>(
-    command?.timeOptions || [{ type: 'relative', value: 15, label: '+15хв' }]
+    command?.timeOptions || [{ type: 'relative', value: 15, label: `+${formatMinutesShort(15, language)}` }]
   );
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showTimeAdder, setShowTimeAdder] = useState(false);
@@ -325,7 +330,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
         </button>
 
         <h2 className="text-xl font-bold mb-6">
-          {mode === 'create' ? 'Нова команда' : 'Редагувати команду'}
+          {mode === 'create' ? copy.commands.modalTitleCreate : copy.commands.modalTitleEdit}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -340,12 +345,12 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
             </button>
             <div className="flex-1">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                НАЗВА
+                {copy.commands.labelName}
               </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Наприклад: Читати книгу"
+                placeholder={copy.commands.placeholderName}
                 className="w-full bg-gray-50 rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
               />
@@ -385,7 +390,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
           {/* Category */}
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
-              КАТЕГОРІЯ
+              {copy.commands.labelCategory}
             </label>
             <div className="flex gap-2 flex-wrap">
               {categories.map((cat) => (
@@ -408,7 +413,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
           {/* Time Options */}
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
-              ВАРІАНТИ ЧАСУ
+              {copy.commands.labelTimeOptions}
             </label>
             <div className="flex gap-2 flex-wrap mb-3">
               {timeOptions.map((opt, idx) => (
@@ -434,7 +439,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
                   className="border-2 border-dashed border-gray-200 px-3 py-2 rounded-full text-sm font-bold text-gray-400 hover:border-blue-200 hover:text-blue-400 transition-all"
                 >
                   <Plus size={14} className="inline mr-1" />
-                  Додати
+                  {copy.commands.addTime}
                 </button>
               )}
             </div>
@@ -456,7 +461,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
             disabled={!name.trim() || timeOptions.length === 0}
             className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {mode === 'create' ? 'СТВОРИТИ' : 'ЗБЕРЕГТИ'}
+            {mode === 'create' ? copy.commands.create : copy.commands.save}
           </button>
         </form>
       </motion.div>
@@ -471,15 +476,14 @@ interface TimeOptionAdderProps {
 }
 
 function TimeOptionAdder({ onAdd, onCancel }: TimeOptionAdderProps) {
+  const { copy, language } = useI18n();
   const [type, setType] = useState<'relative' | 'absolute'>('relative');
   const [relativeMinutes, setRelativeMinutes] = useState(30);
   const [absoluteTime, setAbsoluteTime] = useState('12:00');
 
   const handleAdd = () => {
     if (type === 'relative') {
-      const label = relativeMinutes >= 60
-        ? `+${Math.floor(relativeMinutes / 60)}год${relativeMinutes % 60 ? ` ${relativeMinutes % 60}хв` : ''}`
-        : `+${relativeMinutes}хв`;
+      const label = `+${formatMinutesShort(relativeMinutes, language)}`;
       onAdd({ type: 'relative', value: relativeMinutes, label });
     } else {
       onAdd({ type: 'absolute', value: absoluteTime, label: absoluteTime });
@@ -507,7 +511,7 @@ function TimeOptionAdder({ onAdd, onCancel }: TimeOptionAdderProps) {
                 : 'bg-white text-gray-600'
             }`}
           >
-            Через час
+            {copy.commands.timeTypeRelative}
           </button>
           <button
             type="button"
@@ -518,7 +522,7 @@ function TimeOptionAdder({ onAdd, onCancel }: TimeOptionAdderProps) {
                 : 'bg-white text-gray-600'
             }`}
           >
-            Точний час
+            {copy.commands.timeTypeAbsolute}
           </button>
         </div>
 
@@ -526,7 +530,7 @@ function TimeOptionAdder({ onAdd, onCancel }: TimeOptionAdderProps) {
         {type === 'relative' ? (
           <div className="grid grid-cols-4 gap-2">
             {relativeOptions.map((min) => {
-              const label = min >= 60 ? `${Math.floor(min / 60)} год` : `${min} хв`;
+              const label = formatMinutesShort(min, language);
               return (
                 <button
                   key={min}
@@ -559,14 +563,14 @@ function TimeOptionAdder({ onAdd, onCancel }: TimeOptionAdderProps) {
             onClick={onCancel}
             className="flex-1 py-2 bg-white rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
           >
-            Скасувати
+            {copy.commands.cancel}
           </button>
           <button
             type="button"
             onClick={handleAdd}
             className="flex-1 py-2 bg-blue-600 rounded-xl text-sm font-bold text-white hover:bg-blue-700 transition-colors"
           >
-            Додати
+            {copy.commands.add}
           </button>
         </div>
       </div>

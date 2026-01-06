@@ -1,18 +1,18 @@
 import type { QuickCommand, Category } from '@/types';
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'daily', name: 'Щоденні', icon: '☀️', order: 0 },
-  { id: 'work', name: 'Робота', icon: '💼', order: 1 },
-  { id: 'home', name: 'Дім', icon: '🏠', order: 2 },
-  { id: 'health', name: "Здоров'я", icon: '❤️', order: 3 },
-  { id: 'personal', name: 'Особисте', icon: '👤', order: 4 },
+  { id: 'daily', name: 'Ежедневные', icon: '☀️', order: 0 },
+  { id: 'work', name: 'Работа', icon: '💼', order: 1 },
+  { id: 'home', name: 'Дом', icon: '🏠', order: 2 },
+  { id: 'health', name: 'Здоровье', icon: '❤️', order: 3 },
+  { id: 'personal', name: 'Личное', icon: '👤', order: 4 },
 ];
 
 export const DEFAULT_COMMANDS: QuickCommand[] = [
   {
     id: 'cmd_vitamins',
     icon: '💊',
-    name: 'Випити вітаміни',
+    name: 'Выпить витамины',
     categoryId: 'daily',
     timeOptions: [
       { type: 'absolute', value: '09:00', label: '09:00' },
@@ -25,12 +25,12 @@ export const DEFAULT_COMMANDS: QuickCommand[] = [
   {
     id: 'cmd_water',
     icon: '💧',
-    name: 'Випити воду',
+    name: 'Выпить воду',
     categoryId: 'daily',
     timeOptions: [
-      { type: 'relative', value: 30, label: '+30хв' },
-      { type: 'relative', value: 60, label: '+1год' },
-      { type: 'relative', value: 120, label: '+2год' },
+      { type: 'relative', value: 30, label: '+30 мин' },
+      { type: 'relative', value: 60, label: '+1 ч' },
+      { type: 'relative', value: 120, label: '+2 ч' },
     ],
     createdAt: Date.now(),
     usageCount: 0,
@@ -38,12 +38,12 @@ export const DEFAULT_COMMANDS: QuickCommand[] = [
   {
     id: 'cmd_call',
     icon: '📞',
-    name: 'Зателефонувати',
+    name: 'Позвонить',
     categoryId: 'work',
     timeOptions: [
-      { type: 'relative', value: 15, label: '+15хв' },
-      { type: 'relative', value: 30, label: '+30хв' },
-      { type: 'relative', value: 60, label: '+1год' },
+      { type: 'relative', value: 15, label: '+15 мин' },
+      { type: 'relative', value: 30, label: '+30 мин' },
+      { type: 'relative', value: 60, label: '+1 ч' },
     ],
     createdAt: Date.now(),
     usageCount: 0,
@@ -51,11 +51,11 @@ export const DEFAULT_COMMANDS: QuickCommand[] = [
   {
     id: 'cmd_email',
     icon: '📧',
-    name: 'Перевірити пошту',
+    name: 'Проверить почту',
     categoryId: 'work',
     timeOptions: [
-      { type: 'relative', value: 60, label: '+1год' },
-      { type: 'relative', value: 120, label: '+2год' },
+      { type: 'relative', value: 60, label: '+1 ч' },
+      { type: 'relative', value: 120, label: '+2 ч' },
       { type: 'absolute', value: '17:00', label: '17:00' },
     ],
     createdAt: Date.now(),
@@ -64,12 +64,12 @@ export const DEFAULT_COMMANDS: QuickCommand[] = [
   {
     id: 'cmd_laundry',
     icon: '🧺',
-    name: 'Перевірити пральку',
+    name: 'Проверить стиралку',
     categoryId: 'home',
     timeOptions: [
-      { type: 'relative', value: 30, label: '+30хв' },
-      { type: 'relative', value: 45, label: '+45хв' },
-      { type: 'relative', value: 60, label: '+1год' },
+      { type: 'relative', value: 30, label: '+30 мин' },
+      { type: 'relative', value: 45, label: '+45 мин' },
+      { type: 'relative', value: 60, label: '+1 ч' },
     ],
     createdAt: Date.now(),
     usageCount: 0,
@@ -77,7 +77,7 @@ export const DEFAULT_COMMANDS: QuickCommand[] = [
   {
     id: 'cmd_exercise',
     icon: '🏃',
-    name: 'Тренування',
+    name: 'Тренировка',
     categoryId: 'health',
     timeOptions: [
       { type: 'absolute', value: '07:00', label: '07:00' },
@@ -107,8 +107,8 @@ export const EMOJI_OPTIONS = [
 
 // Quick time options for capture screen
 export const QUICK_TIME_OPTIONS = [
-  { minutes: 5, label: '5 хв' },
-  { minutes: 15, label: '15 хв' },
-  { minutes: 30, label: '30 хв' },
-  { minutes: 60, label: '1 год' },
+  { minutes: 5, label: '5 мин' },
+  { minutes: 15, label: '15 мин' },
+  { minutes: 30, label: '30 мин' },
+  { minutes: 60, label: '1 ч' },
 ] as const;

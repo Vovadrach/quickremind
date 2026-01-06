@@ -2,13 +2,15 @@ import { useMemo } from 'react';
 import { useAppStore } from '@/store';
 import { BarChart, Bar, ResponsiveContainer, XAxis, Cell } from 'recharts';
 import { ACHIEVEMENTS } from '@/constants';
+import { useI18n } from '@/hooks/useI18n';
 
 export function StatsPage() {
   const { userStats, dailyStats } = useAppStore();
+  const { copy, formatCount, formatMessage, getAchievementCopy, getWeekdaysShort, language } = useI18n();
+  const weekdays = getWeekdaysShort();
 
   // Get last 7 days stats
   const weeklyData = useMemo(() => {
-    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
     const result = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
@@ -16,12 +18,12 @@ export function StatsPage() {
       const dateStr = date.toISOString().split('T')[0];
       const dayStats = dailyStats[dateStr];
       result.push({
-        name: days[date.getDay() === 0 ? 6 : date.getDay() - 1],
+        name: weekdays[date.getDay() === 0 ? 6 : date.getDay() - 1],
         val: dayStats?.captured || 0,
       });
     }
     return result;
-  }, [dailyStats]);
+  }, [dailyStats, weekdays, language]);
 
   const today = new Date().toISOString().split('T')[0];
   const todayStats = dailyStats[today];
@@ -39,21 +41,21 @@ export function StatsPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-8">Статистика</h1>
+      <h1 className="text-2xl font-bold mb-8">{copy.stats.title}</h1>
 
       <div className="space-y-6">
         {/* Streak Card */}
         <div className="bg-gradient-to-br from-orange-400 to-red-500 rounded-[32px] p-6 text-white shadow-xl shadow-orange-100">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h3 className="text-lg font-bold opacity-80 uppercase tracking-widest mb-1">STREAK</h3>
-              <p className="text-6xl font-black">{userStats.currentStreak} днів</p>
+              <h3 className="text-lg font-bold opacity-80 uppercase tracking-widest mb-1">{copy.stats.streakTitle}</h3>
+              <p className="text-6xl font-black">{formatCount(userStats.currentStreak, 'day')}</p>
             </div>
             <span className="text-5xl">🔥</span>
           </div>
 
           <div className="flex justify-between mb-4">
-            {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'].map((d, i) => {
+            {weekdays.map((d, i) => {
               const dayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
               const isCompleted = i <= dayIndex && userStats.currentStreak > dayIndex - i;
               return (
@@ -78,15 +80,17 @@ export function StatsPage() {
             />
           </div>
           <p className="text-xs font-bold opacity-80">
-            До 7-денного badge: {7 - (userStats.currentStreak % 7)} днів
+            {formatMessage(copy.stats.badgeRemaining, {
+              count: formatCount(7 - (userStats.currentStreak % 7), 'day'),
+            })}
           </p>
         </div>
 
         {/* Daily Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <StatBox label="Думок" value={(todayStats?.captured || 0).toString()} icon="💭" />
+          <StatBox label={copy.stats.dailyThoughts} value={(todayStats?.captured || 0).toString()} icon="💭" />
           <StatBox
-            label="Виконано"
+            label={copy.stats.dailyCompleted}
             value={
               todayStats?.captured
                 ? `${Math.round((todayStats.completed / todayStats.captured) * 100)}%`
@@ -94,12 +98,12 @@ export function StatsPage() {
             }
             icon="✅"
           />
-          <StatBox label="CP" value={`+${todayStats?.cpEarned || 0}`} icon="✨" color="text-purple-600" />
+          <StatBox label={copy.stats.dailyCp} value={`+${todayStats?.cpEarned || 0}`} icon="✨" color="text-purple-600" />
         </div>
 
         {/* Activity Chart */}
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-          <h4 className="text-xs font-bold text-gray-400 tracking-widest mb-6">АКТИВНІСТЬ ТИЖНЯ</h4>
+          <h4 className="text-xs font-bold text-gray-400 tracking-widest mb-6">{copy.stats.weeklyActivity}</h4>
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyData}>
@@ -122,12 +126,13 @@ export function StatsPage() {
         {/* Achievements */}
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h4 className="text-xs font-bold text-gray-400 tracking-widest">ДОСЯГНЕННЯ</h4>
-            <button className="text-blue-600 text-xs font-bold">Дивитись всі →</button>
+            <h4 className="text-xs font-bold text-gray-400 tracking-widest">{copy.stats.achievementsTitle}</h4>
+            <button className="text-blue-600 text-xs font-bold">{copy.stats.achievementsAll}</button>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-2 hide-scrollbar">
             {allAchievementsToShow.map((a) => {
               const isUnlocked = userStats.achievements.includes(a.id);
+              const achievementCopy = getAchievementCopy(a.id);
               return (
                 <div key={a.id} className="flex flex-col items-center gap-2 min-w-[70px]">
                   <div
@@ -144,7 +149,7 @@ export function StatsPage() {
                       isUnlocked ? 'text-gray-800' : 'text-gray-400'
                     }`}
                   >
-                    {a.name}
+                    {achievementCopy.name}
                   </span>
                 </div>
               );
@@ -154,14 +159,14 @@ export function StatsPage() {
 
         {/* All Time Stats */}
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-          <h4 className="text-xs font-bold text-gray-400 tracking-widest mb-4">ЗА ВЕСЬ ЧАС</h4>
+          <h4 className="text-xs font-bold text-gray-400 tracking-widest mb-4">{copy.stats.allTimeTitle}</h4>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-500">Думок зловлено</span>
+              <span className="text-gray-500">{copy.stats.totalCaptured}</span>
               <span className="font-bold">{userStats.totalCaptured}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Виконано</span>
+              <span className="text-gray-500">{copy.stats.totalCompleted}</span>
               <span className="font-bold">
                 {userStats.totalCompleted} (
                 {userStats.totalCaptured > 0
@@ -171,11 +176,11 @@ export function StatsPage() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Найдовший streak</span>
-              <span className="font-bold">{userStats.longestStreak} днів</span>
+              <span className="text-gray-500">{copy.stats.longestStreak}</span>
+              <span className="font-bold">{formatCount(userStats.longestStreak, 'day')}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Всього CP</span>
+              <span className="text-gray-500">{copy.stats.totalCp}</span>
               <span className="font-bold text-purple-600">{userStats.totalCP}</span>
             </div>
           </div>

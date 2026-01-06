@@ -89,12 +89,14 @@ export type AchievementCondition =
   | { type: 'dailyCP'; value: number }
   | { type: 'totalCP'; value: number };
 
+export type Language = 'ru' | 'uk' | 'en';
+
 // ====== SETTINGS ======
 export interface AppSettings {
   notificationSound: boolean;
   vibrationEnabled: boolean;
   darkMode: boolean;
-  language: 'uk' | 'en';
+  language: Language;
 }
 
 // ====== UI STATE ======

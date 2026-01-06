@@ -3,6 +3,7 @@ import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { useCountdown } from '@/hooks/useCountdown';
 import { formatTime } from '@/utils/time';
+import { useI18n } from '@/hooks/useI18n';
 import type { Reminder } from '@/types/reminder';
 
 interface ReminderCardProps {
@@ -11,6 +12,7 @@ interface ReminderCardProps {
 }
 
 export function ReminderCard({ reminder, onDelete }: ReminderCardProps) {
+  const { copy, language } = useI18n();
   const x = useMotionValue(0);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -18,8 +20,8 @@ export function ReminderCard({ reminder, onDelete }: ReminderCardProps) {
   const deleteOpacity = useTransform(x, [-100, -50], [1, 0]);
   const cardOpacity = useTransform(x, [-200, -100], [0.5, 1]);
 
-  const { formatted, isExpired } = useCountdown(reminder.targetTime);
-  const targetTimeStr = formatTime(reminder.targetTime);
+  const { formatted, isExpired } = useCountdown(reminder.targetTime, language);
+  const targetTimeStr = formatTime(reminder.targetTime, language);
 
   const handleDragStart = useCallback((e: React.PointerEvent) => {
     isDragging.current = true;
@@ -115,10 +117,10 @@ export function ReminderCard({ reminder, onDelete }: ReminderCardProps) {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <p className="text-base font-medium text-text-primary truncate">
-            {reminder.text || 'Нагадування'}
+            {reminder.text || copy.active.reminderFallback}
           </p>
           <p className={cn('text-sm', isExpired ? 'text-danger' : 'text-text-tertiary')}>
-            {isExpired ? 'час настав!' : `залишилось ${formatted}`}
+            {isExpired ? copy.active.timeExpired : `${copy.active.timeLeftPrefix} ${formatted}`}
           </p>
         </div>
 

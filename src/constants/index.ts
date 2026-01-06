@@ -32,9 +32,9 @@ export const TIME = {
 
 // Tab configuration
 export const TABS = [
-  { id: 'commands', label: 'Швидко', icon: '⚡' },
-  { id: 'active', label: 'Активні', icon: '📋' },
-  { id: 'capture', label: 'Capture', icon: '➕' },
-  { id: 'stats', label: 'Статис.', icon: '📊' },
-  { id: 'profile', label: 'Профіль', icon: '👤' },
+  { id: 'commands', label: 'Быстро', icon: '⚡' },
+  { id: 'active', label: 'Активные', icon: '📋' },
+  { id: 'capture', label: 'Создать', icon: '➕' },
+  { id: 'stats', label: 'Стат.', icon: '📊' },
+  { id: 'profile', label: 'Профиль', icon: '👤' },
 ] as const;

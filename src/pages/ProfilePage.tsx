@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import { useAppStore } from '@/store';
-import { Bell, Zap, Shield, HelpCircle, Share2, Star } from 'lucide-react';
-import { LEVEL_THRESHOLDS, LEVEL_NAMES, APP_VERSION } from '@/constants';
+import { Bell, Zap, Shield, HelpCircle, Share2, Star, Globe } from 'lucide-react';
+import { LEVEL_THRESHOLDS, APP_VERSION } from '@/constants';
+import { BottomSheet } from '@/components/ui/Modal';
+import { useI18n } from '@/hooks/useI18n';
 
 export function ProfilePage() {
   const { userStats, settings, updateSettings, isPremium } = useAppStore();
+  const { copy, formatMessage, getLanguageLabel, languageOptions, getLevelName } = useI18n();
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
 
   // Calculate level progress
   const currentLevelThreshold = LEVEL_THRESHOLDS[userStats.level - 1] || 0;
@@ -11,35 +16,37 @@ export function ProfilePage() {
     LEVEL_THRESHOLDS[userStats.level] || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
   const levelProgress =
     ((userStats.totalCP - currentLevelThreshold) / (nextLevelThreshold - currentLevelThreshold)) * 100;
-  const levelName = LEVEL_NAMES[userStats.level - 1] || LEVEL_NAMES[LEVEL_NAMES.length - 1];
+  const levelName = getLevelName(userStats.level);
 
   const handlePremiumClick = () => {
-    alert("Дякуємо за інтерес! Оплата в тестовому режимі недоступна. Ви вже PRO в нашому серці! ❤️");
+    alert(copy.alerts.premium);
   };
 
-  const handleRowClick = (label: string) => {
-    if (label === 'Темна тема') {
-      alert('Функція Dark Mode доступна лише в PRO версії.');
-    } else if (label === 'Поділитися застосунком') {
-      if (navigator.share) {
-        navigator
-          .share({
-            title: 'QuickRemind 2.0',
-            text: 'Спробуй цей крутий застосунок для нагадувань!',
-            url: window.location.href,
-          })
-          .catch(console.error);
-      } else {
-        alert('Скопійовано посилання: ' + window.location.href);
-      }
+  const handleDarkModeClick = () => {
+    alert(copy.alerts.darkModePro);
+  };
+
+  const handleShareClick = () => {
+    if (navigator.share) {
+      navigator
+        .share({
+          title: copy.share.title,
+          text: copy.share.text,
+          url: window.location.href,
+        })
+        .catch(console.error);
     } else {
-      alert(`Відкриваємо: ${label}`);
+      alert(formatMessage(copy.alerts.shareCopied, { url: window.location.href }));
     }
+  };
+
+  const handleGenericClick = (label: string) => {
+    alert(formatMessage(copy.alerts.openSection, { label }));
   };
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-8">Профіль</h1>
+      <h1 className="text-2xl font-bold mb-8">{copy.profile.title}</h1>
 
       <div className="space-y-6">
         {/* User Card */}
@@ -48,7 +55,9 @@ export function ProfilePage() {
             👤
           </div>
           <h2 className="text-xl font-black mb-1">{levelName}</h2>
-          <p className="text-blue-600 font-bold text-sm mb-6">Level {userStats.level}</p>
+          <p className="text-blue-600 font-bold text-sm mb-6">
+            {formatMessage(copy.profile.levelLabel, { level: userStats.level })}
+          </p>
 
           <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden mb-2">
             <div
@@ -57,7 +66,11 @@ export function ProfilePage() {
             />
           </div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-            {userStats.totalCP} / {nextLevelThreshold} CP до Level {userStats.level + 1}
+            {formatMessage(copy.profile.levelProgress, {
+              current: userStats.totalCP,
+              next: nextLevelThreshold,
+              level: userStats.level + 1,
+            })}
           </p>
         </div>
 
@@ -70,13 +83,13 @@ export function ProfilePage() {
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <Zap size={18} fill="currentColor" />
-                <h3 className="text-lg font-bold">QuickRemind PRO</h3>
+                <h3 className="text-lg font-bold">{copy.profile.premiumTitle}</h3>
               </div>
               <p className="text-white/80 text-xs mb-4 max-w-[200px]">
-                Необмежені команди, віджети та темна тема
+                {copy.profile.premiumDescription}
               </p>
               <div className="bg-white text-indigo-600 font-bold px-6 py-2.5 rounded-2xl text-sm shadow-lg inline-block">
-                $2.99 одноразово
+                {copy.profile.premiumPrice}
               </div>
             </div>
             <div className="absolute top-[-20px] right-[-20px] w-40 h-40 bg-white/10 rounded-full blur-2xl" />
@@ -85,52 +98,84 @@ export function ProfilePage() {
 
         {/* Settings List */}
         <div className="space-y-1">
-          <SectionHeader title="НАЛАШТУВАННЯ" />
+          <SectionHeader title={copy.profile.settingsHeader} />
           <SettingsRow
             icon={<Bell size={20} className="text-blue-500" />}
-            label="Звук нотифікацій"
+            label={copy.settings.notificationSound}
             toggle={settings.notificationSound}
             onToggle={() => updateSettings({ notificationSound: !settings.notificationSound })}
           />
           <SettingsRow
             icon={<Zap size={20} className="text-orange-500" />}
-            label="Вібрація"
+            label={copy.settings.vibration}
             toggle={settings.vibrationEnabled}
             onToggle={() => updateSettings({ vibrationEnabled: !settings.vibrationEnabled })}
           />
           <SettingsRow
+            icon={<Globe size={20} className="text-emerald-500" />}
+            label={copy.settings.language}
+            value={getLanguageLabel(settings.language)}
+            onClick={() => setIsLanguageOpen(true)}
+          />
+          <SettingsRow
             icon={<Shield size={20} className="text-purple-500" />}
-            label="Темна тема"
+            label={copy.settings.darkMode}
             value="🔒 PRO"
-            onClick={() => handleRowClick('Темна тема')}
+            onClick={handleDarkModeClick}
           />
 
           <div className="pt-4">
-            <SectionHeader title="ІНШЕ" />
+            <SectionHeader title={copy.profile.otherHeader} />
             <SettingsRow
               icon={<Share2 size={20} />}
-              label="Поділитися застосунком"
-              onClick={() => handleRowClick('Поділитися застосунком')}
+              label={copy.settings.shareApp}
+              onClick={handleShareClick}
             />
             <SettingsRow
               icon={<Star size={20} />}
-              label="Оцінити в App Store"
-              onClick={() => handleRowClick('Оцінити в App Store')}
+              label={copy.settings.rateApp}
+              onClick={() => handleGenericClick(copy.settings.rateApp)}
             />
             <SettingsRow
               icon={<HelpCircle size={20} />}
-              label="Надіслати відгук"
-              onClick={() => handleRowClick('Надіслати відгук')}
+              label={copy.settings.feedback}
+              onClick={() => handleGenericClick(copy.settings.feedback)}
             />
           </div>
         </div>
 
         <div className="text-center py-8">
           <p className="text-[10px] font-bold text-gray-300 tracking-widest uppercase">
-            ВЕРСІЯ {APP_VERSION} (BUILD 1)
+            {copy.profile.versionLabel} {APP_VERSION} (BUILD 1)
           </p>
         </div>
       </div>
+
+      <BottomSheet
+        isOpen={isLanguageOpen}
+        onClose={() => setIsLanguageOpen(false)}
+        title={copy.language.sheetTitle}
+      >
+        <div className="p-4 space-y-2">
+          {languageOptions.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                updateSettings({ language: option.value });
+                setIsLanguageOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-colors ${
+                settings.language === option.value
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <span>{option.label}</span>
+              {settings.language === option.value && <span>✓</span>}
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
     </div>
   );
 }

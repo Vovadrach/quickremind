@@ -5,10 +5,12 @@ import { TabBar } from '@/components/layout/TabBar';
 import { Toast } from '@/components/ui/Toast';
 import { CapturePage, CommandsPage, ActivePage, StatsPage, ProfilePage } from '@/pages';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useI18n } from '@/hooks/useI18n';
 
 export default function App() {
   const { activeTab, toast, hideToast, clearExpired, updateStreak } = useAppStore();
   const { isSupported, permission, requestPermission } = useNotifications();
+  const { copy } = useI18n();
 
   // Clear expired reminders and update streak on mount
   useEffect(() => {
@@ -65,9 +67,9 @@ export default function App() {
         >
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <p className="font-bold">Увімкніть сповіщення</p>
+              <p className="font-bold">{copy.permissions.notificationsTitle}</p>
               <p className="text-sm text-white/80">
-                Щоб отримувати нагадування вчасно
+                {copy.permissions.notificationsDescription}
               </p>
             </div>
             <button
@@ -75,7 +77,7 @@ export default function App() {
               className="px-4 py-2 bg-white text-blue-600 font-bold rounded-2xl
                 hover:bg-white/90 transition-colors"
             >
-              Увімкнути
+              {copy.permissions.notificationsAction}
             </button>
           </div>
         </motion.div>

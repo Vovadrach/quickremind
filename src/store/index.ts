@@ -14,9 +14,11 @@ import type {
   ModalState,
 } from '@/types';
 import { generateId } from '@/utils/id';
+import { formatMinutesShort } from '@/utils/time';
 import { LIMITS, STORAGE_KEYS, TIME } from '@/constants';
 import { DEFAULT_CATEGORIES, DEFAULT_COMMANDS, CP_REWARDS, ACHIEVEMENTS, LEVEL_THRESHOLDS } from '@/constants';
 import { scheduleNotification, cancelNotification } from '@/services/notifications';
+import { formatMessage, formatCount, getCopy, getAchievementCopy } from '@/i18n';
 
 // ====== HELPER FUNCTIONS ======
 const getTodayDate = () => new Date().toISOString().split('T')[0];
@@ -108,7 +110,7 @@ const defaultSettings: AppSettings = {
   notificationSound: true,
   vibrationEnabled: true,
   darkMode: false,
-  language: 'uk',
+  language: 'ru',
 };
 
 const defaultToast: ToastState = {
@@ -187,15 +189,31 @@ export const useAppStore = create<AppStore>()(
 
       // ====== REMINDER ACTIONS ======
       addReminder: (input) => {
-        const { reminders, showToast, addCP, updateStreak, checkAchievements, captureStartTime, userStats } = get();
+        const {
+          reminders,
+          showToast,
+          addCP,
+          updateStreak,
+          checkAchievements,
+          captureStartTime,
+          userStats,
+          settings,
+        } = get();
+        const language = settings.language;
+        const copy = getCopy(language);
 
         if (reminders.filter(r => r.status === 'pending').length >= LIMITS.MAX_REMINDERS) {
-          showToast(`Максимум ${LIMITS.MAX_REMINDERS} нагадувань`, 'warning');
+          showToast(
+            formatMessage(copy.toasts.maxReminders, {
+              count: formatCount(language, LIMITS.MAX_REMINDERS, 'reminder'),
+            }),
+            'warning'
+          );
           return null;
         }
 
         if (input.minutes < LIMITS.MIN_MINUTES) {
-          showToast('Мінімум 1 хвилина', 'error');
+          showToast(copy.toasts.minMinutes, 'error');
           return null;
         }
 
@@ -204,8 +222,8 @@ export const useAppStore = create<AppStore>()(
         const targetDate = input.targetDate || getTargetDate(targetTime);
 
         const notificationId = scheduleNotification({
-          title: input.text || 'Нагадування',
-          body: 'Час настав!',
+          title: input.text || copy.notifications.title,
+          body: copy.notifications.body,
           scheduledTime: targetTime,
         });
 
@@ -258,16 +276,20 @@ export const useAppStore = create<AppStore>()(
         updateStreak();
         checkAchievements();
 
-        const timeLabel = input.minutes >= 60
-          ? `${Math.floor(input.minutes / 60)} год${input.minutes % 60 > 0 ? ` ${input.minutes % 60} хв` : ''}`
-          : `${input.minutes} хв`;
-        showToast(`Думку зловлено! Через ${timeLabel}`, 'success', '🎯', CP_REWARDS.createReminder);
+        const timeLabel = formatMinutesShort(input.minutes, language);
+        showToast(
+          formatMessage(copy.toasts.captureSuccess, { time: timeLabel }),
+          'success',
+          '🎯',
+          CP_REWARDS.createReminder
+        );
 
         return reminder;
       },
 
       completeReminder: (id) => {
-        const { reminders, showToast, addCP, updateStreak, checkAchievements } = get();
+        const { reminders, showToast, addCP, updateStreak, checkAchievements, settings } = get();
+        const copy = getCopy(settings.language);
         const reminder = reminders.find((r) => r.id === id);
         if (!reminder || reminder.status !== 'pending') return;
 
@@ -309,7 +331,7 @@ export const useAppStore = create<AppStore>()(
         checkAchievements();
 
         showToast(
-          isOnTime ? 'Виконано вчасно!' : 'Виконано!',
+          isOnTime ? copy.toasts.completedOnTime : copy.toasts.completed,
           'success',
           '✅',
           cpEarned
@@ -330,7 +352,9 @@ export const useAppStore = create<AppStore>()(
       },
 
       postponeReminder: (id, minutes) => {
-        const { reminders, showToast } = get();
+        const { reminders, showToast, settings } = get();
+        const language = settings.language;
+        const copy = getCopy(language);
         const reminder = reminders.find((r) => r.id === id);
         if (!reminder) return;
 
@@ -340,8 +364,8 @@ export const useAppStore = create<AppStore>()(
 
         const newTargetTime = Date.now() + minutes * 60 * 1000;
         const newNotificationId = scheduleNotification({
-          title: reminder.text || 'Нагадування',
-          body: 'Час настав!',
+          title: reminder.text || copy.notifications.title,
+          body: copy.notifications.body,
           scheduledTime: newTargetTime,
         });
 
@@ -354,8 +378,8 @@ export const useAppStore = create<AppStore>()(
           modals: { ...state.modals, postponeOptions: null },
         }));
 
-        const timeLabel = minutes >= 60 ? `${Math.floor(minutes / 60)} год` : `${minutes} хв`;
-        showToast(`Відкладено на ${timeLabel}`, 'info', '⏰');
+        const timeLabel = formatMinutesShort(minutes, language);
+        showToast(formatMessage(copy.toasts.postponed, { time: timeLabel }), 'info', '⏰');
       },
 
       clearExpired: () => {
@@ -415,10 +439,17 @@ export const useAppStore = create<AppStore>()(
       },
 
       addCommand: (command) => {
-        const { commands, showToast, addCP, checkAchievements } = get();
+        const { commands, showToast, addCP, checkAchievements, settings } = get();
+        const language = settings.language;
+        const copy = getCopy(language);
 
         if (commands.length >= LIMITS.MAX_COMMANDS) {
-          showToast(`Максимум ${LIMITS.MAX_COMMANDS} команд`, 'warning');
+          showToast(
+            formatMessage(copy.toasts.maxCommands, {
+              count: formatCount(language, LIMITS.MAX_COMMANDS, 'command'),
+            }),
+            'warning'
+          );
           return;
         }
 
@@ -435,7 +466,7 @@ export const useAppStore = create<AppStore>()(
 
         addCP(CP_REWARDS.createQuickCommand);
         checkAchievements();
-        showToast('Команду створено!', 'success', '⚡', CP_REWARDS.createQuickCommand);
+        showToast(copy.toasts.commandCreated, 'success', '⚡', CP_REWARDS.createQuickCommand);
       },
 
       updateCommand: (id, updates) => {
@@ -529,7 +560,9 @@ export const useAppStore = create<AppStore>()(
       },
 
       checkAchievements: () => {
-        const { userStats, commands, dailyStats, showToast, addCP } = get();
+        const { userStats, commands, dailyStats, showToast, addCP, settings } = get();
+        const language = settings.language;
+        const copy = getCopy(language);
         const today = getTodayDate();
         const todayStats = dailyStats[today];
         const unlockedIds: string[] = [];
@@ -578,9 +611,10 @@ export const useAppStore = create<AppStore>()(
           // Show achievement toast for first one
           const firstAchievement = ACHIEVEMENTS.find((a) => a.id === unlockedIds[0]);
           if (firstAchievement) {
+            const achievementCopy = getAchievementCopy(language, firstAchievement.id);
             addCP(firstAchievement.cpReward);
             showToast(
-              `${firstAchievement.name} отримано!`,
+              formatMessage(copy.toasts.achievementUnlocked, { name: achievementCopy.name }),
               'achievement',
               firstAchievement.icon,
               firstAchievement.cpReward
@@ -613,12 +647,14 @@ export const useAppStore = create<AppStore>()(
       onRehydrateStorage: () => (state) => {
         if (state?.reminders) {
           const now = Date.now();
+          const language = state.settings?.language ?? 'ru';
+          const copy = getCopy(language);
           state.reminders = state.reminders
             .filter((r) => r.status === 'pending' && r.targetTime > now)
             .map((reminder) => {
               const notificationId = scheduleNotification({
-                title: reminder.text || 'Нагадування',
-                body: 'Час настав!',
+                title: reminder.text || copy.notifications.title,
+                body: copy.notifications.body,
                 scheduledTime: reminder.targetTime,
               });
               return { ...reminder, notificationId };
