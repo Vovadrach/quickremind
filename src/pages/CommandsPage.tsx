@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
 import { Play, Plus, X, Trash2, Clock, Check, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -290,6 +290,21 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showTimeAdder, setShowTimeAdder] = useState(false);
 
+  useEffect(() => {
+    const { style } = document.body;
+    const prevOverflow = style.overflow;
+    const prevTouchAction = style.touchAction;
+    const prevOverscroll = style.overscrollBehavior;
+    style.overflow = 'hidden';
+    style.touchAction = 'none';
+    style.overscrollBehavior = 'none';
+    return () => {
+      style.overflow = prevOverflow;
+      style.touchAction = prevTouchAction;
+      style.overscrollBehavior = prevOverscroll;
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -313,7 +328,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center overscroll-contain touch-none"
       onClick={onClose}
     >
       <motion.div
@@ -321,7 +336,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
         animate={{ y: 0 }}
         exit={{ y: 100 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-6 notion-shadow relative max-h-[90vh] overflow-y-auto"
+        className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-6 notion-shadow relative max-h-[90vh] overflow-y-auto touch-auto"
       >
         <button
           onClick={onClose}
@@ -353,7 +368,6 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
                 onChange={(e) => setName(e.target.value)}
                 placeholder={copy.commands.placeholderName}
                 className="w-full bg-neutral-50 rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-neutral-900/5"
-                autoFocus
               />
             </div>
           </div>
