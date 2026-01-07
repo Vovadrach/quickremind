@@ -8,6 +8,8 @@ interface TimePickerWheelProps {
   selectedHour?: number;
   selectedMinute?: number;
   minuteStep?: number;
+  visibleItems?: number;
+  itemHeight?: number;
   onHoursChange?: (hours: number) => void;
   onMinutesChange?: (minutes: number) => void;
   onHourChange?: (hours: number) => void;
@@ -21,6 +23,8 @@ export function TimePickerWheel({
   selectedHour,
   selectedMinute,
   minuteStep = 5,
+  visibleItems = 3,
+  itemHeight = 44,
   onHoursChange,
   onMinutesChange,
   onHourChange,
@@ -89,8 +93,8 @@ export function TimePickerWheel({
           value={currentHour}
           onChange={handleHourChange}
           renderItem={renderHour}
-          itemHeight={52}
-          visibleItems={5}
+          itemHeight={itemHeight}
+          visibleItems={visibleItems}
           className="w-full"
         />
       </div>
@@ -105,8 +109,8 @@ export function TimePickerWheel({
           value={resolvedMinute}
           onChange={handleMinuteChange}
           renderItem={renderMinute}
-          itemHeight={52}
-          visibleItems={5}
+          itemHeight={itemHeight}
+          visibleItems={visibleItems}
           className="w-full"
         />
       </div>
