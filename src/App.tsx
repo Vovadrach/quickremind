@@ -63,7 +63,7 @@ export default function App() {
         <motion.div
           initial={{ y: 100 }}
           animate={{ y: 0 }}
-          className="absolute bottom-24 left-0 right-0 p-4 bg-neutral-900 text-white z-40"
+          className="fixed bottom-24 left-0 right-0 p-4 bg-neutral-900 text-white z-[300]"
         >
           <div className="flex items-center gap-4">
             <div className="flex-1">
