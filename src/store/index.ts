@@ -192,6 +192,7 @@ export const useAppStore = create<AppStore>()(
         const {
           reminders,
           showToast,
+          setActiveTab,
           addCP,
           updateStreak,
           checkAchievements,
@@ -283,6 +284,7 @@ export const useAppStore = create<AppStore>()(
           '🎯',
           CP_REWARDS.createReminder
         );
+        setActiveTab('active');
 
         return reminder;
       },
