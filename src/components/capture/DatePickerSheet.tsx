@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BottomSheet } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
+import { useI18n } from '@/hooks/useI18n';
 
 interface DatePickerSheetProps {
   isOpen: boolean;
@@ -11,19 +12,33 @@ interface DatePickerSheetProps {
   onSelectDate: (date: string) => void;
 }
 
-const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
-const MONTHS = [
-  'Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
-  'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'
-];
-
 export function DatePickerSheet({ isOpen, onClose, selectedDate, onSelectDate }: DatePickerSheetProps) {
+  const { copy, getWeekdaysShort, locale } = useI18n();
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [tempSelectedDate, setTempSelectedDate] = useState<string | null>(selectedDate);
 
   const todayStr = today.toISOString().split('T')[0];
+  const weekdays = getWeekdaysShort();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const baseDate = selectedDate
+      ? new Date(`${selectedDate}T00:00:00`)
+      : new Date(`${todayStr}T00:00:00`);
+    setCurrentMonth(baseDate.getMonth());
+    setCurrentYear(baseDate.getFullYear());
+    setTempSelectedDate(selectedDate ?? todayStr);
+  }, [isOpen, selectedDate, todayStr]);
+
+  const monthLabel = useMemo(() => {
+    const label = new Date(currentYear, currentMonth, 1).toLocaleDateString(locale, {
+      month: 'long',
+      year: 'numeric',
+    });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }, [currentYear, currentMonth, locale]);
 
   const days = useMemo(() => {
     const firstDay = new Date(currentYear, currentMonth, 1);
@@ -85,7 +100,7 @@ export function DatePickerSheet({ isOpen, onClose, selectedDate, onSelectDate }:
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Обрати дату">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title={copy.capture.dateSheetTitle}>
       <div className="p-4">
         {/* Month/Year Navigation */}
         <div className="flex items-center justify-between mb-4">
@@ -98,7 +113,7 @@ export function DatePickerSheet({ isOpen, onClose, selectedDate, onSelectDate }:
             </svg>
           </button>
           <span className="font-semibold text-[var(--color-text-primary)]">
-            {MONTHS[currentMonth]} {currentYear}
+            {monthLabel}
           </span>
           <button
             onClick={goToNextMonth}
@@ -112,7 +127,7 @@ export function DatePickerSheet({ isOpen, onClose, selectedDate, onSelectDate }:
 
         {/* Weekday Headers */}
         <div className="grid grid-cols-7 gap-1 mb-2">
-          {WEEKDAYS.map((day) => (
+          {weekdays.map((day) => (
             <div
               key={day}
               className="text-center text-xs font-medium text-[var(--color-text-tertiary)] py-2"
@@ -161,7 +176,7 @@ export function DatePickerSheet({ isOpen, onClose, selectedDate, onSelectDate }:
             onClick={handleConfirm}
             disabled={!tempSelectedDate || tempSelectedDate < todayStr}
           >
-            Підтвердити
+            {copy.capture.dateConfirm}
           </Button>
         </div>
       </div>

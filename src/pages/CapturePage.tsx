@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, CheckCircle2 } from 'lucide-react';
+import { Calendar, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/hooks/useI18n';
-import { formatMinutesShort } from '@/utils/time';
+import { formatDateShort, formatMinutesShort } from '@/utils/time';
 import { TimePickerWheel } from '@/components/ui/TimePickerWheel';
+import { DatePickerSheet } from '@/components/capture/DatePickerSheet';
 
 export function CapturePage() {
   const { addReminder, userStats, dailyStats } = useAppStore();
@@ -12,26 +13,35 @@ export function CapturePage() {
   const [text, setText] = useState('');
   const [selectedRelative, setSelectedRelative] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   // Simulated Wheel Picker State
-  const [hours, setHours] = useState(new Date().getHours());
-  const [minutes, setMinutes] = useState(Math.ceil(new Date().getMinutes() / 5) * 5 % 60);
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const [hours, setHours] = useState(now.getHours());
+  const [minutes, setMinutes] = useState(Math.ceil(now.getMinutes() / 5) * 5 % 60);
   const [minuteStep, setMinuteStep] = useState<1 | 5>(5);
+  const [selectedDate, setSelectedDate] = useState(todayStr);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr;
   const todayCP = dailyStats[today]?.cpEarned || 0;
 
   const handleCapture = () => {
     if (!text.trim()) return;
 
     let targetMinutes: number;
+    let targetDateOverride: string | undefined;
     if (selectedRelative) {
       targetMinutes = selectedRelative;
     } else {
-      const d = new Date();
-      d.setHours(hours, minutes, 0, 0);
-      if (d.getTime() < Date.now()) d.setDate(d.getDate() + 1);
-      targetMinutes = Math.round((d.getTime() - Date.now()) / 60000);
+      const baseDate = selectedDate || todayStr;
+      const [year, month, day] = baseDate.split('-').map(Number);
+      const target = new Date(year, month - 1, day, hours, minutes, 0, 0);
+      if (baseDate === todayStr && target.getTime() < Date.now()) {
+        target.setDate(target.getDate() + 1);
+      }
+      targetMinutes = Math.round((target.getTime() - Date.now()) / 60000);
+      targetDateOverride = target.toISOString().split('T')[0];
     }
 
     if (targetMinutes < 1) targetMinutes = 1;
@@ -40,6 +50,7 @@ export function CapturePage() {
       text: text.trim(),
       minutes: targetMinutes,
       icon: '💭',
+      targetDate: targetDateOverride,
     });
 
     setText('');
@@ -63,6 +74,11 @@ export function CapturePage() {
     setMinuteStep(step);
     setMinutes((prev) => snapMinutes(prev, step));
   };
+
+  const selectedDateLabel =
+    selectedDate === todayStr
+      ? copy.capture.dateButtonToday
+      : formatDateShort(new Date(`${selectedDate}T00:00:00`).getTime(), language);
 
   return (
     <div className="p-6 flex flex-col">
@@ -154,22 +170,22 @@ export function CapturePage() {
               className="w-full"
             />
           </div>
-        </div>
 
-        <div className="flex gap-3">
           <button
-            onClick={() => alert(copy.capture.todayAlert)}
-            className="flex-1 h-14 bg-white border border-neutral-200 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold text-neutral-600"
+            type="button"
+            onClick={() => setIsDatePickerOpen(true)}
+            className="mt-4 w-full h-16 bg-white border border-neutral-200 rounded-2xl flex items-center justify-between px-4 text-neutral-600 notion-shadow"
           >
-            <Calendar size={18} className="text-neutral-400" />
-            {copy.capture.todayButton}
-          </button>
-          <button
-            onClick={() => alert(copy.capture.otherDateAlert)}
-            className="flex-1 h-14 bg-white border border-neutral-200 rounded-2xl flex items-center justify-center gap-2 text-sm font-semibold text-neutral-600"
-          >
-            <Calendar size={18} className="text-neutral-400" />
-            {copy.capture.otherDateButton}
+            <div className="flex items-center gap-3">
+              <Calendar size={18} className="text-neutral-400" />
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[10px] font-bold uppercase text-neutral-400">
+                  {copy.capture.dateButtonLabel}
+                </span>
+                <span className="text-sm font-semibold text-neutral-800">{selectedDateLabel}</span>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-neutral-300" />
           </button>
         </div>
 
@@ -208,6 +224,13 @@ export function CapturePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <DatePickerSheet
+        isOpen={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
+        selectedDate={selectedDate}
+        onSelectDate={(date) => setSelectedDate(date)}
+      />
     </div>
   );
 }

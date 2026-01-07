@@ -22,6 +22,10 @@ type Translation = {
     placeholder: string;
     quickHeader: string;
     customHeader: string;
+    dateButtonLabel: string;
+    dateButtonToday: string;
+    dateSheetTitle: string;
+    dateConfirm: string;
     minuteStepRounded: string;
     minuteStepExact: string;
     hoursLabel: string;
@@ -170,6 +174,10 @@ const ru: Translation = {
     placeholder: '💭 О чем не забыть?',
     quickHeader: 'Быстро',
     customHeader: 'Или выбери время',
+    dateButtonLabel: 'Дата',
+    dateButtonToday: 'Сегодня',
+    dateSheetTitle: 'Выбрать дату',
+    dateConfirm: 'Подтвердить',
     minuteStepRounded: '5 мин',
     minuteStepExact: '1 мин',
     hoursLabel: 'Часы',
@@ -347,6 +355,10 @@ const uk: Translation = {
     placeholder: '💭 Про що не забути?',
     quickHeader: 'Швидко',
     customHeader: 'Або обери час',
+    dateButtonLabel: 'Дата',
+    dateButtonToday: 'Сьогодні',
+    dateSheetTitle: 'Обрати дату',
+    dateConfirm: 'Підтвердити',
     minuteStepRounded: '5 хв',
     minuteStepExact: '1 хв',
     hoursLabel: 'Години',
