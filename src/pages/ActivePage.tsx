@@ -129,7 +129,7 @@ interface ReminderCardProps {
 }
 
 function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
-  const { copy, language } = useI18n();
+  const { copy, language, formatCount } = useI18n();
   const [timeLeft, setTimeLeft] = useState(reminder.targetTime - Date.now());
   const todayStr = new Date().toISOString().split('T')[0];
   const showDate = reminder.targetDate && reminder.targetDate !== todayStr;
@@ -147,7 +147,19 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
 
   const getTimeLabel = () => {
     if (timeLeft < 0) return copy.active.missed;
-    return formatMinutesShort(minutesLeft, language);
+
+    const totalMinutes = Math.max(0, minutesLeft);
+    const totalHours = Math.floor(totalMinutes / 60);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+
+    if (days > 0) {
+      const dayLabel = formatCount(days, 'day');
+      if (hours === 0) return dayLabel;
+      return `${dayLabel} ${formatMinutesShort(hours * 60, language)}`;
+    }
+
+    return formatMinutesShort(totalMinutes, language);
   };
 
   return (
