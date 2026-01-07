@@ -41,6 +41,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        mode: 'development',
+        disableDevLogs: true,
       },
       devOptions: {
         enabled: true
