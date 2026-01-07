@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useAppStore } from '@/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, CheckCircle2 } from 'lucide-react';
 import { useI18n } from '@/hooks/useI18n';
 import { formatMinutesShort } from '@/utils/time';
+import { TimePickerWheel } from '@/components/ui/TimePickerWheel';
 
 export function CapturePage() {
   const { addReminder, userStats, dailyStats } = useAppStore();
@@ -15,6 +16,7 @@ export function CapturePage() {
   // Simulated Wheel Picker State
   const [hours, setHours] = useState(new Date().getHours());
   const [minutes, setMinutes] = useState(Math.ceil(new Date().getMinutes() / 5) * 5 % 60);
+  const [minuteStep, setMinuteStep] = useState<1 | 5>(5);
 
   const today = new Date().toISOString().split('T')[0];
   const todayCP = dailyStats[today]?.cpEarned || 0;
@@ -50,6 +52,17 @@ export function CapturePage() {
     value,
     label: formatMinutesShort(value, language),
   }));
+
+  const snapMinutes = (value: number, step: number) => {
+    const snapped = Math.round(value / step) * step;
+    const max = 60 - step;
+    return Math.max(0, Math.min(max, snapped));
+  };
+
+  const handleMinuteStepChange = (step: 1 | 5) => {
+    setMinuteStep(step);
+    setMinutes((prev) => snapMinutes(prev, step));
+  };
 
   return (
     <div className="p-6 flex flex-col">
@@ -102,24 +115,44 @@ export function CapturePage() {
 
         {/* Custom Picker */}
         <div className={selectedRelative ? 'opacity-30 pointer-events-none' : ''}>
-          <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">
-            {copy.capture.customHeader}
-          </h3>
-          <div className="bg-white border border-neutral-200 rounded-3xl p-4 notion-shadow flex justify-center gap-8 items-center relative overflow-hidden h-32">
-            <div className="flex flex-col items-center">
-              <span className="text-neutral-300 text-[10px] font-bold uppercase mb-1">
-                {copy.capture.hoursLabel}
-              </span>
-              <WheelPicker value={hours} onChange={setHours} max={24} />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+              {copy.capture.customHeader}
+            </h3>
+            <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-full p-1">
+              <button
+                type="button"
+                onClick={() => handleMinuteStepChange(5)}
+                className={`px-3 py-1 text-[10px] font-bold rounded-full transition-colors ${
+                  minuteStep === 5 ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-700'
+                }`}
+              >
+                {copy.capture.minuteStepRounded}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMinuteStepChange(1)}
+                className={`px-3 py-1 text-[10px] font-bold rounded-full transition-colors ${
+                  minuteStep === 1 ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-700'
+                }`}
+              >
+                {copy.capture.minuteStepExact}
+              </button>
             </div>
-            <div className="text-4xl font-light text-neutral-200 mt-4">:</div>
-            <div className="flex flex-col items-center">
-              <span className="text-neutral-300 text-[10px] font-bold uppercase mb-1">
-                {copy.capture.minutesLabel}
-              </span>
-              <WheelPicker value={minutes} onChange={setMinutes} max={60} step={5} />
+          </div>
+          <div className="bg-white border border-neutral-200 rounded-3xl p-4 notion-shadow">
+            <div className="flex justify-between text-[10px] font-bold text-neutral-300 uppercase mb-2 px-6">
+              <span>{copy.capture.hoursLabel}</span>
+              <span>{copy.capture.minutesLabel}</span>
             </div>
-            <div className="absolute inset-0 ios-wheel-gradient pointer-events-none"></div>
+            <TimePickerWheel
+              selectedHour={hours}
+              selectedMinute={minutes}
+              onHourChange={setHours}
+              onMinuteChange={setMinutes}
+              minuteStep={minuteStep}
+              className="w-full"
+            />
           </div>
         </div>
 
@@ -175,54 +208,6 @@ export function CapturePage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-interface WheelPickerProps {
-  value: number;
-  onChange: (v: number) => void;
-  max: number;
-  step?: number;
-}
-
-function WheelPicker({ value, onChange, max, step = 1 }: WheelPickerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const items = Array.from({ length: Math.ceil(max / step) }, (_, i) => i * step);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      const itemHeight = 40;
-      const index = items.indexOf(value);
-      if (index >= 0) {
-        containerRef.current.scrollTop = index * itemHeight;
-      }
-    }
-  }, []);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const itemHeight = 40;
-    const index = Math.round(e.currentTarget.scrollTop / itemHeight);
-    const newValue = items[index];
-    if (newValue !== undefined && newValue !== value) {
-      onChange(newValue);
-    }
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      onScroll={handleScroll}
-      className="h-[120px] w-12 overflow-y-scroll hide-scrollbar snap-y snap-mandatory py-[40px]"
-    >
-      {items.map((i) => (
-        <div
-          key={i}
-          className="h-[40px] flex items-center justify-center snap-center text-2xl font-bold text-gray-600 transition-colors hover:text-blue-500"
-        >
-          {i.toString().padStart(2, '0')}
-        </div>
-      ))}
     </div>
   );
 }

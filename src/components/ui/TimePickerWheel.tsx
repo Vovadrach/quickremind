@@ -7,6 +7,7 @@ interface TimePickerWheelProps {
   minutes?: number;
   selectedHour?: number;
   selectedMinute?: number;
+  minuteStep?: number;
   onHoursChange?: (hours: number) => void;
   onMinutesChange?: (minutes: number) => void;
   onHourChange?: (hours: number) => void;
@@ -19,6 +20,7 @@ export function TimePickerWheel({
   minutes,
   selectedHour,
   selectedMinute,
+  minuteStep = 5,
   onHoursChange,
   onMinutesChange,
   onHourChange,
@@ -36,10 +38,21 @@ export function TimePickerWheel({
     []
   );
 
-  const minuteItems = useMemo(
-    () => Array.from({ length: 12 }, (_, i) => i * 5),
-    []
-  );
+  const minuteItems = useMemo(() => {
+    const step = Math.max(1, Math.round(minuteStep));
+    const count = Math.ceil(60 / step);
+    return Array.from({ length: count }, (_, i) => i * step).filter((value) => value < 60);
+  }, [minuteStep]);
+
+  const resolvedMinute = useMemo(() => {
+    if (!minuteItems.length) return 0;
+    if (minuteItems.includes(currentMinute)) return currentMinute;
+    return minuteItems.reduce(
+      (nearest, item) =>
+        Math.abs(item - currentMinute) < Math.abs(nearest - currentMinute) ? item : nearest,
+      minuteItems[0]
+    );
+  }, [minuteItems, currentMinute]);
 
   const renderHour = (hour: number, isSelected: boolean) => (
     <span
@@ -70,7 +83,7 @@ export function TimePickerWheel({
   return (
     <div className={cn('flex items-center justify-center gap-2', className)}>
       {/* Hours */}
-      <div className="flex-1 max-w-[100px]">
+      <div className="flex-1 min-w-0">
         <WheelPicker
           items={hourItems}
           value={currentHour}
@@ -78,6 +91,7 @@ export function TimePickerWheel({
           renderItem={renderHour}
           itemHeight={52}
           visibleItems={5}
+          className="w-full"
         />
       </div>
 
@@ -85,14 +99,15 @@ export function TimePickerWheel({
       <div className="text-2xl font-bold text-[var(--color-text-secondary)]">:</div>
 
       {/* Minutes */}
-      <div className="flex-1 max-w-[100px]">
+      <div className="flex-1 min-w-0">
         <WheelPicker
           items={minuteItems}
-          value={currentMinute}
+          value={resolvedMinute}
           onChange={handleMinuteChange}
           renderItem={renderMinute}
           itemHeight={52}
           visibleItems={5}
+          className="w-full"
         />
       </div>
     </div>

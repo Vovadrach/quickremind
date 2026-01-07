@@ -58,14 +58,14 @@ export function WheelPicker<T>({
     }
   }, [items, value, onChange, itemHeight, y]);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     isDragging.current = true;
     startY.current = e.clientY;
     startOffset.current = y.get();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
   }, [y]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging.current) return;
 
     const deltaY = e.clientY - startY.current;
@@ -84,8 +84,12 @@ export function WheelPicker<T>({
     }
   }, [items.length, itemHeight, y]);
 
-  const handlePointerUp = useCallback(() => {
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
     isDragging.current = false;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     snapToNearest();
   }, [snapToNearest]);
 
@@ -108,9 +112,13 @@ export function WheelPicker<T>({
   return (
     <div
       ref={containerRef}
-      className={cn('relative overflow-hidden select-none touch-none', className)}
+      className={cn('relative overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing', className)}
       style={{ height: containerHeight }}
       onWheel={handleWheel}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
       {/* Gradient overlays */}
       <div
@@ -139,16 +147,11 @@ export function WheelPicker<T>({
 
       {/* Items container */}
       <motion.div
-        className="cursor-grab active:cursor-grabbing"
         style={{
           y: springY,
           paddingTop: centerOffset,
           paddingBottom: centerOffset,
         }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
       >
         {items.map((item, index) => {
           const isSelected = item === value;
