@@ -522,7 +522,7 @@ function TimeOptionAdder({ onAdd, onCancel }: TimeOptionAdderProps) {
             onClick={() => setType('relative')}
             className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
               type === 'relative'
-                ? 'bg-neutral-900 text-white'
+                ? 'bg-blue-600 text-white'
                 : 'bg-white text-neutral-600'
             }`}
           >
@@ -533,7 +533,7 @@ function TimeOptionAdder({ onAdd, onCancel }: TimeOptionAdderProps) {
             onClick={() => setType('absolute')}
             className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
               type === 'absolute'
-                ? 'bg-neutral-900 text-white'
+                ? 'bg-blue-600 text-white'
                 : 'bg-white text-neutral-600'
             }`}
           >
