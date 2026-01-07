@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store';
-import { Bell, Zap, Shield, HelpCircle, Share2, Star, Globe } from 'lucide-react';
+import { Bell, Zap, Shield, HelpCircle, Share2, Globe, Star } from 'lucide-react';
 import { LEVEL_THRESHOLDS, APP_VERSION } from '@/constants';
 import { BottomSheet } from '@/components/ui/Modal';
 import { useI18n } from '@/hooks/useI18n';
@@ -46,101 +46,113 @@ export function ProfilePage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-8">{copy.profile.title}</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-8">{copy.profile.title}</h1>
 
       <div className="space-y-6">
         {/* User Card */}
-        <div className="bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm flex flex-col items-center">
-          <div className="w-24 h-24 bg-blue-100 rounded-3xl flex items-center justify-center text-5xl mb-4 shadow-inner">
+        <div className="bg-white border border-neutral-200 rounded-3xl p-8 notion-shadow flex flex-col items-center">
+          <div className="w-24 h-24 bg-neutral-100 rounded-3xl flex items-center justify-center text-5xl notion-shadow mb-4">
             👤
           </div>
-          <h2 className="text-xl font-black mb-1">{levelName}</h2>
-          <p className="text-blue-600 font-bold text-sm mb-6">
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">{levelName}</h2>
+          <div className="bg-neutral-900 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">
             {formatMessage(copy.profile.levelLabel, { level: userStats.level })}
-          </p>
-
-          <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden mb-2">
-            <div
-              className="bg-blue-600 h-full rounded-full transition-all duration-1000"
-              style={{ width: `${Math.min(levelProgress, 100)}%` }}
-            />
           </div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-            {formatMessage(copy.profile.levelProgress, {
-              current: userStats.totalCP,
-              next: nextLevelThreshold,
-              level: userStats.level + 1,
-            })}
-          </p>
+
+          <div className="w-full mt-8">
+            <div className="flex justify-between text-[10px] font-bold text-neutral-400 uppercase mb-2">
+              <span>{copy.profile.levelProgressLabel}</span>
+              <span>{userStats.totalCP} / {nextLevelThreshold} CP</span>
+            </div>
+            <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+              <div
+                className="bg-neutral-900 h-full rounded-full transition-all duration-1000"
+                style={{ width: `${Math.min(levelProgress, 100)}%` }}
+              />
+            </div>
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-2">
+              {formatMessage(copy.profile.levelProgress, {
+                current: userStats.totalCP,
+                next: nextLevelThreshold,
+                level: userStats.level + 1,
+              })}
+            </p>
+          </div>
         </div>
 
         {/* Premium Banner */}
         {!isPremium && (
           <button
             onClick={handlePremiumClick}
-            className="w-full text-left bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden transition-transform active:scale-[0.98]"
+            className="w-full text-left bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white notion-shadow relative overflow-hidden transition-transform active:scale-[0.98]"
           >
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <Zap size={18} fill="currentColor" />
-                <h3 className="text-lg font-bold">{copy.profile.premiumTitle}</h3>
+                <span className="text-xs font-bold uppercase tracking-widest">{copy.profile.premiumTitle}</span>
               </div>
-              <p className="text-white/80 text-xs mb-4 max-w-[200px]">
+              <p className="text-lg font-bold mb-4">
                 {copy.profile.premiumDescription}
               </p>
-              <div className="bg-white text-indigo-600 font-bold px-6 py-2.5 rounded-2xl text-sm shadow-lg inline-block">
+              <div className="bg-white text-neutral-900 font-bold px-6 py-2.5 rounded-xl text-sm shadow-xl inline-block">
                 {copy.profile.premiumPrice}
               </div>
             </div>
-            <div className="absolute top-[-20px] right-[-20px] w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+            <div className="absolute top-0 right-0 p-8 opacity-20">
+              <StarIcon size={120} className="fill-white" />
+            </div>
           </button>
         )}
 
         {/* Settings List */}
         <div className="space-y-1">
           <SectionHeader title={copy.profile.settingsHeader} />
-          <SettingsRow
-            icon={<Bell size={20} className="text-blue-500" />}
-            label={copy.settings.notificationSound}
-            toggle={settings.notificationSound}
-            onToggle={() => updateSettings({ notificationSound: !settings.notificationSound })}
-          />
-          <SettingsRow
-            icon={<Zap size={20} className="text-orange-500" />}
-            label={copy.settings.vibration}
-            toggle={settings.vibrationEnabled}
-            onToggle={() => updateSettings({ vibrationEnabled: !settings.vibrationEnabled })}
-          />
-          <SettingsRow
-            icon={<Globe size={20} className="text-emerald-500" />}
-            label={copy.settings.language}
-            value={getLanguageLabel(settings.language)}
-            onClick={() => setIsLanguageOpen(true)}
-          />
-          <SettingsRow
-            icon={<Shield size={20} className="text-purple-500" />}
-            label={copy.settings.darkMode}
-            value="🔒 PRO"
-            onClick={handleDarkModeClick}
-          />
+          <div className="bg-white border border-neutral-200 rounded-3xl notion-shadow overflow-hidden">
+            <SettingsRow
+              icon={<Bell size={18} />}
+              label={copy.settings.notificationSound}
+              toggle={settings.notificationSound}
+              onToggle={() => updateSettings({ notificationSound: !settings.notificationSound })}
+            />
+            <SettingsRow
+              icon={<Zap size={18} />}
+              label={copy.settings.vibration}
+              toggle={settings.vibrationEnabled}
+              onToggle={() => updateSettings({ vibrationEnabled: !settings.vibrationEnabled })}
+            />
+            <SettingsRow
+              icon={<Globe size={18} />}
+              label={copy.settings.language}
+              value={getLanguageLabel(settings.language)}
+              onClick={() => setIsLanguageOpen(true)}
+            />
+            <SettingsRow
+              icon={<Shield size={18} />}
+              label={copy.settings.darkMode}
+              value="🔒 PRO"
+              onClick={handleDarkModeClick}
+            />
+          </div>
 
           <div className="pt-4">
             <SectionHeader title={copy.profile.otherHeader} />
-            <SettingsRow
-              icon={<Share2 size={20} />}
-              label={copy.settings.shareApp}
-              onClick={handleShareClick}
-            />
-            <SettingsRow
-              icon={<Star size={20} />}
-              label={copy.settings.rateApp}
-              onClick={() => handleGenericClick(copy.settings.rateApp)}
-            />
-            <SettingsRow
-              icon={<HelpCircle size={20} />}
-              label={copy.settings.feedback}
-              onClick={() => handleGenericClick(copy.settings.feedback)}
-            />
+            <div className="bg-white border border-neutral-200 rounded-3xl notion-shadow overflow-hidden">
+              <SettingsRow
+                icon={<Share2 size={18} />}
+                label={copy.settings.shareApp}
+                onClick={handleShareClick}
+              />
+              <SettingsRow
+                icon={<Star size={18} />}
+                label={copy.settings.rateApp}
+                onClick={() => handleGenericClick(copy.settings.rateApp)}
+              />
+              <SettingsRow
+                icon={<HelpCircle size={18} />}
+                label={copy.settings.feedback}
+                onClick={() => handleGenericClick(copy.settings.feedback)}
+              />
+            </div>
           </div>
         </div>
 
@@ -182,7 +194,7 @@ export function ProfilePage() {
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <h3 className="text-[10px] font-bold text-gray-400 tracking-[0.2em] mb-3 mt-4 px-2">{title}</h3>
+    <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4 px-2">{title}</h3>
   );
 }
 
@@ -199,26 +211,34 @@ function SettingsRow({ icon, label, value, toggle, onToggle, onClick }: Settings
   return (
     <div
       onClick={onClick || onToggle}
-      className="bg-white border-b border-gray-50 last:border-0 p-4 flex items-center justify-between group cursor-pointer active:bg-gray-50 transition-colors rounded-2xl"
+      className="flex items-center justify-between p-4 hover:bg-neutral-50 transition-colors cursor-pointer border-b border-neutral-100 last:border-0"
     >
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center">{icon}</div>
-        <span className="font-bold text-gray-700 text-sm">{label}</span>
+        <div className="text-neutral-400">{icon}</div>
+        <span className="font-semibold text-neutral-800 text-sm">{label}</span>
       </div>
       <div className="flex items-center gap-2">
-        {value && <span className="text-xs font-bold text-gray-400">{value}</span>}
+        {value && <span className="text-sm font-medium text-neutral-400">{value}</span>}
         {onToggle !== undefined ? (
           <div
             className={`w-10 h-6 rounded-full p-1 flex transition-colors duration-200 ${
-              toggle ? 'bg-green-500 justify-end' : 'bg-gray-200 justify-start'
+              toggle ? 'bg-emerald-500 justify-end' : 'bg-neutral-200 justify-start'
             }`}
           >
             <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
           </div>
         ) : (
-          <span className="text-gray-300 text-xl">›</span>
+          <span className="text-neutral-300 text-xl">›</span>
         )}
       </div>
     </div>
+  );
+}
+
+function StarIcon({ size, className }: { size: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
   );
 }

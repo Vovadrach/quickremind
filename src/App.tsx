@@ -38,9 +38,9 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-white shadow-2xl overflow-hidden relative">
+    <div className="flex flex-col min-h-screen max-w-screen-sm mx-auto relative overflow-hidden">
       {/* Content Area */}
-      <main className="flex-1 overflow-y-auto hide-scrollbar pb-24">
+      <main className="flex-1 overflow-y-auto hide-scrollbar pb-32">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -63,7 +63,7 @@ export default function App() {
         <motion.div
           initial={{ y: 100 }}
           animate={{ y: 0 }}
-          className="absolute bottom-20 left-0 right-0 p-4 bg-blue-600 text-white z-40"
+          className="absolute bottom-24 left-0 right-0 p-4 bg-neutral-900 text-white z-40"
         >
           <div className="flex items-center gap-4">
             <div className="flex-1">
@@ -74,7 +74,7 @@ export default function App() {
             </div>
             <button
               onClick={requestPermission}
-              className="px-4 py-2 bg-white text-blue-600 font-bold rounded-2xl
+              className="px-4 py-2 bg-white text-neutral-900 font-bold rounded-2xl
                 hover:bg-white/90 transition-colors"
             >
               {copy.permissions.notificationsAction}

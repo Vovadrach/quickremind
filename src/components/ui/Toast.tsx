@@ -73,7 +73,7 @@ export function Toast({
         >
           <div
             className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg pointer-events-auto',
+              'flex items-center gap-3 px-4 py-3 rounded-2xl notion-shadow pointer-events-auto',
               'max-w-sm w-full',
               colors[type]
             )}

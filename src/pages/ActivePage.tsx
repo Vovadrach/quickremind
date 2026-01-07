@@ -12,6 +12,10 @@ export function ActivePage() {
     () => reminders.filter((r) => r.status === 'pending'),
     [reminders]
   );
+  const completedReminders = useMemo(
+    () => reminders.filter((r) => r.status === 'completed'),
+    [reminders]
+  );
 
   const now = Date.now();
   const sorted = [...activeReminders].sort((a, b) => a.targetTime - b.targetTime);
@@ -25,17 +29,17 @@ export function ActivePage() {
   return (
     <div className="p-6">
       <header className="mb-8">
-        <h1 className="text-2xl font-bold">{copy.active.title}</h1>
-        <p className="text-gray-400 font-medium">
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{copy.active.title}</h1>
+        <p className="text-sm text-neutral-500 font-medium">
           {formatCount(activeReminders.length, 'thought')}
         </p>
       </header>
 
       <div className="space-y-8">
         {activeReminders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-300">
-            <span className="text-6xl mb-4">🌙</span>
-            <p className="font-bold">{copy.active.emptyTitle}</p>
+          <div className="flex flex-col items-center justify-center py-20 opacity-40">
+            <span className="text-5xl">📆</span>
+            <p className="mt-4 font-medium">{copy.active.emptyTitle}</p>
           </div>
         ) : (
           <>
@@ -79,6 +83,25 @@ export function ActivePage() {
             )}
           </>
         )}
+
+        <section className="pt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+              {copy.active.completedTitle}
+            </h3>
+            <span className="text-xs font-bold text-neutral-400">{completedReminders.length}</span>
+          </div>
+          <div className="space-y-2 opacity-50">
+            {completedReminders.slice(0, 3).map((rem) => (
+              <div key={rem.id} className="flex items-center gap-3 py-1">
+                <span className="text-lg grayscale">{rem.icon}</span>
+                <span className="text-sm font-medium line-through">
+                  {rem.text || copy.active.reminderFallback}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -87,8 +110,8 @@ export function ActivePage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-bold text-gray-400 tracking-widest mb-4">{title}</h3>
-      <div className="space-y-4">{children}</div>
+      <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">{title}</h3>
+      <div className="space-y-3">{children}</div>
     </div>
   );
 }
@@ -128,17 +151,17 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, x: 100 }}
-      className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex items-center justify-between group"
+      className="bg-white border border-neutral-200 rounded-2xl p-4 notion-shadow flex items-center gap-4 group transition-all hover:border-neutral-300"
     >
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="w-12 h-12 bg-neutral-50 rounded-xl flex items-center justify-center text-xl">
           {reminder.icon}
         </div>
-        <div>
-          <h4 className="font-bold text-gray-800 leading-tight mb-1">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-neutral-900 truncate">
             {reminder.text || copy.active.reminderFallback}
           </h4>
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-400">
+          <div className="text-xs text-neutral-500 mt-0.5 flex items-center gap-1 font-medium">
             <Clock size={12} />
             <span>{formatTime(reminder.targetTime, language)}</span>
             <span>·</span>
@@ -150,16 +173,16 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
       </div>
       <div className="flex items-center gap-2">
         <button
-          onClick={() => onDelete(reminder.id)}
-          className="w-10 h-10 rounded-2xl text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
+          onClick={() => onComplete(reminder.id)}
+          className="p-2 text-neutral-300 hover:text-emerald-500 transition-colors"
         >
-          <Trash2 size={18} />
+          <Check size={22} />
         </button>
         <button
-          onClick={() => onComplete(reminder.id)}
-          className="w-10 h-10 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center shadow-sm active:scale-90 transition-transform"
+          onClick={() => onDelete(reminder.id)}
+          className="p-2 text-neutral-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
         >
-          <Check size={20} strokeWidth={3} />
+          <Trash2 size={18} />
         </button>
       </div>
     </motion.div>

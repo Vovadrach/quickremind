@@ -1,4 +1,4 @@
-import { Zap, List, PlusCircle, BarChart3, User } from 'lucide-react';
+import { Zap, List, Plus, BarChart3, User } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { useI18n } from '@/hooks/useI18n';
 
@@ -6,65 +6,61 @@ export function TabBar() {
   const { activeTab, setActiveTab } = useAppStore();
   const { copy } = useI18n();
 
+  const tabs = [
+    { id: 'commands', icon: <Zap size={20} />, label: copy.tabs.commands },
+    { id: 'active', icon: <List size={20} />, label: copy.tabs.active },
+    { id: 'capture', icon: <Plus size={24} />, label: copy.tabs.capture },
+    { id: 'stats', icon: <BarChart3 size={20} />, label: copy.tabs.stats },
+    { id: 'profile', icon: <User size={20} />, label: copy.tabs.profile },
+  ] as const;
+
+  const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
+
   return (
-    <nav className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 flex items-center justify-around py-3 px-2 z-50">
-      <TabButton
-        active={activeTab === 'commands'}
-        onClick={() => setActiveTab('commands')}
-        icon={<Zap size={24} />}
-        label={copy.tabs.commands}
-      />
-      <TabButton
-        active={activeTab === 'active'}
-        onClick={() => setActiveTab('active')}
-        icon={<List size={24} />}
-        label={copy.tabs.active}
-      />
-      <TabButton
-        active={activeTab === 'capture'}
-        onClick={() => setActiveTab('capture')}
-        icon={<PlusCircle size={36} className="text-blue-600" />}
-        label={copy.tabs.capture}
-        large
-      />
-      <TabButton
-        active={activeTab === 'stats'}
-        onClick={() => setActiveTab('stats')}
-        icon={<BarChart3 size={24} />}
-        label={copy.tabs.stats}
-      />
-      <TabButton
-        active={activeTab === 'profile'}
-        onClick={() => setActiveTab('profile')}
-        icon={<User size={24} />}
-        label={copy.tabs.profile}
-      />
+    <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-lg z-50">
+      <div className="relative bg-white/80 backdrop-blur-xl notion-shadow border border-neutral-200/50 rounded-2xl flex items-center justify-between p-1 px-2 h-16">
+        <div
+          className="absolute h-12 bg-neutral-100 rounded-xl transition-all duration-300 ease-out z-0"
+          style={{
+            width: `${100 / tabs.length - 2}%`,
+            left: `${activeIndex * (100 / tabs.length) + 1}%`,
+          }}
+        />
+        {tabs.map((tab) => (
+          <TabButton
+            key={tab.id}
+            active={activeTab === tab.id}
+            isCapture={tab.id === 'capture'}
+            onClick={() => setActiveTab(tab.id)}
+            icon={tab.icon}
+            label={tab.label}
+          />
+        ))}
+      </div>
     </nav>
   );
 }
 
 interface TabButtonProps {
   active: boolean;
+  isCapture?: boolean;
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
-  large?: boolean;
 }
 
-function TabButton({ active, onClick, icon, label, large }: TabButtonProps) {
+function TabButton({ active, isCapture, onClick, icon, label }: TabButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center transition-all duration-200 ${
-        active ? (large ? 'scale-110' : 'text-blue-600') : 'text-gray-400'
+      className={`relative flex-1 flex flex-col items-center justify-center transition-colors duration-200 h-full z-10 ${
+        active ? 'text-neutral-900' : 'text-neutral-400'
       }`}
     >
-      <div className={`${large ? '-mt-6 mb-1 bg-white rounded-full p-1 shadow-lg' : ''}`}>
+      <div className={`${isCapture ? 'bg-neutral-900 text-white p-2 rounded-full -mt-1 notion-shadow' : ''}`}>
         {icon}
       </div>
-      <span className={`text-[10px] font-medium mt-0.5 ${large ? 'mt-0 font-bold' : ''}`}>
-        {label}
-      </span>
+      {!isCapture && <span className="text-[10px] mt-1 font-medium">{label}</span>}
     </button>
   );
 }

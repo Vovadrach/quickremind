@@ -40,6 +40,7 @@ type Translation = {
       today: string;
       later: string;
     };
+    completedTitle: string;
     reminderFallback: string;
     missed: string;
     inPrefix: string;
@@ -88,6 +89,7 @@ type Translation = {
     title: string;
     levelLabel: string;
     levelProgress: string;
+    levelProgressLabel: string;
     premiumTitle: string;
     premiumDescription: string;
     premiumPrice: string;
@@ -184,6 +186,7 @@ const ru: Translation = {
       today: 'СЕГОДНЯ',
       later: 'ПОЗЖЕ',
     },
+    completedTitle: 'Выполнено недавно',
     reminderFallback: 'Напоминание',
     missed: 'Пропущено',
     inPrefix: 'через',
@@ -232,6 +235,7 @@ const ru: Translation = {
     title: 'Профиль',
     levelLabel: 'Уровень {level}',
     levelProgress: '{current} / {next} CP до уровня {level}',
+    levelProgressLabel: 'Прогресс уровня',
     premiumTitle: 'QuickRemind PRO',
     premiumDescription: 'Неограниченные команды, виджеты и темная тема',
     premiumPrice: '$2.99 один раз',
@@ -357,6 +361,7 @@ const uk: Translation = {
       today: 'СЬОГОДНІ',
       later: 'ПІЗНІШЕ',
     },
+    completedTitle: 'Виконано нещодавно',
     reminderFallback: 'Нагадування',
     missed: 'Пропущено',
     inPrefix: 'через',
@@ -405,6 +410,7 @@ const uk: Translation = {
     title: 'Профіль',
     levelLabel: 'Рівень {level}',
     levelProgress: '{current} / {next} CP до рівня {level}',
+    levelProgressLabel: 'Прогрес рівня',
     premiumTitle: 'QuickRemind PRO',
     premiumDescription: 'Необмежені команди, віджети та темна тема',
     premiumPrice: '$2.99 одноразово',
