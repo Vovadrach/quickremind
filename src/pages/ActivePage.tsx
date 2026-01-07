@@ -3,7 +3,7 @@ import { useAppStore } from '@/store';
 import { Check, Trash2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useI18n } from '@/hooks/useI18n';
-import { formatMinutesShort, formatTime } from '@/utils/time';
+import { formatDateShort, formatMinutesShort, formatTime } from '@/utils/time';
 
 export function ActivePage() {
   const { reminders, completeReminder, removeReminder } = useAppStore();
@@ -122,6 +122,7 @@ interface ReminderCardProps {
     text: string | null;
     icon: string;
     targetTime: number;
+    targetDate: string;
   };
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
@@ -130,6 +131,10 @@ interface ReminderCardProps {
 function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
   const { copy, language } = useI18n();
   const [timeLeft, setTimeLeft] = useState(reminder.targetTime - Date.now());
+  const todayStr = new Date().toISOString().split('T')[0];
+  const showDate = reminder.targetDate && reminder.targetDate !== todayStr;
+  const timeLabel = formatTime(reminder.targetTime, language);
+  const dateLabel = formatDateShort(reminder.targetTime, language);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -163,7 +168,7 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
           </h4>
           <div className="text-xs text-neutral-500 mt-0.5 flex items-center gap-1 font-medium">
             <Clock size={12} />
-            <span>{formatTime(reminder.targetTime, language)}</span>
+            <span>{showDate ? `${dateLabel} · ${timeLabel}` : timeLabel}</span>
             <span>·</span>
             <span className={timeLeft < 15 * 60000 ? 'text-orange-500' : ''}>
               {timeLeft < 0 ? getTimeLabel() : `${copy.active.inPrefix} ${getTimeLabel()}`}
