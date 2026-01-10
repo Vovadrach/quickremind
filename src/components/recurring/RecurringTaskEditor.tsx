@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/Modal';
 import { TimePickerWheel } from '@/components/ui/TimePickerWheel';
+import { BeeModeInfoSheet } from '@/components/settings/BeeModeInfoSheet';
 import { useI18n } from '@/hooks/useI18n';
 import { EMOJI_OPTIONS } from '@/constants';
 import type { RecurringTask, RecurrenceRule, RecurrenceType } from '@/types';
@@ -41,6 +42,7 @@ export function RecurringTaskEditor({
   const [beeModeEnabled, setBeeModeEnabled] = useState(defaultBeeEnabled);
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -112,12 +114,13 @@ export function RecurringTaskEditor({
   };
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={onClose}
-      title={task ? copy.recurring.modalTitleEdit : copy.recurring.modalTitleCreate}
-    >
-      <div className="p-4 space-y-6 relative">
+    <>
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title={task ? copy.recurring.modalTitleEdit : copy.recurring.modalTitleCreate}
+      >
+        <div className="p-4 space-y-6 relative">
         <button
           type="button"
           onClick={onClose}
@@ -309,7 +312,17 @@ export function RecurringTaskEditor({
         </div>
 
         <div className="flex items-center justify-between bg-neutral-50 border border-neutral-100 rounded-2xl px-4 py-3">
-          <span className="text-sm font-semibold text-neutral-700">{copy.recurring.labelBeeMode}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-neutral-700">{copy.recurring.labelBeeMode}</span>
+            <button
+              type="button"
+              onClick={() => setIsInfoOpen(true)}
+              className="text-neutral-300 hover:text-neutral-600 transition-colors"
+              aria-label={copy.beeMode.infoTitle}
+            >
+              <Info size={14} />
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setBeeModeEnabled((prev) => !prev)}
@@ -341,7 +354,9 @@ export function RecurringTaskEditor({
         >
           {task ? copy.recurring.save : copy.recurring.create}
         </button>
-      </div>
-    </BottomSheet>
+        </div>
+      </BottomSheet>
+      <BeeModeInfoSheet isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
+    </>
   );
 }

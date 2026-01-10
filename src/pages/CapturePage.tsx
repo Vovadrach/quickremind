@@ -6,12 +6,15 @@ import { useI18n } from '@/hooks/useI18n';
 import { formatDateShort, formatMinutesShort } from '@/utils/time';
 import { TimePickerWheel } from '@/components/ui/TimePickerWheel';
 import { DatePickerSheet } from '@/components/capture/DatePickerSheet';
+import { EMOJI_OPTIONS } from '@/constants';
 
 export function CapturePage() {
   const { addReminder, userStats, dailyStats } = useAppStore();
   const { copy, formatCount, formatMessage, language } = useI18n();
   const [text, setText] = useState('');
   const [note, setNote] = useState('');
+  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [selectedRelative, setSelectedRelative] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -52,13 +55,15 @@ export function CapturePage() {
     addReminder({
       text: text.trim(),
       minutes: targetMinutes,
-      icon: '💭',
+      icon: selectedEmoji ?? '💭',
       targetDate: targetDateOverride,
       note: noteValue,
     });
 
     setText('');
     setNote('');
+    setSelectedEmoji(null);
+    setIsEmojiPickerOpen(false);
     setSelectedRelative(null);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2000);
@@ -105,7 +110,15 @@ export function CapturePage() {
       <div className="space-y-6">
         <div className="py-2 space-y-3">
           <div className="flex gap-3 items-start">
-            <div className="mt-1.5 w-5 h-5 rounded-full border border-neutral-200 shrink-0" />
+            <button
+              type="button"
+              onClick={() => setIsEmojiPickerOpen((prev) => !prev)}
+              className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border transition-colors ${
+                selectedEmoji ? 'border-transparent bg-neutral-50' : 'border-neutral-200 bg-transparent'
+              }`}
+            >
+              {selectedEmoji && <span className="text-2xl">{selectedEmoji}</span>}
+            </button>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -121,6 +134,34 @@ export function CapturePage() {
               className="w-full min-h-[64px] bg-transparent border-0 p-0 text-sm font-medium text-neutral-600 placeholder:text-neutral-400 focus:outline-none focus:ring-0 resize-none leading-relaxed"
             />
           </div>
+          <AnimatePresence>
+            {isEmojiPickerOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-8 gap-2 p-3 bg-neutral-50 rounded-2xl">
+                  {EMOJI_OPTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        setSelectedEmoji(emoji);
+                        setIsEmojiPickerOpen(false);
+                      }}
+                      className={`text-2xl p-2 rounded-xl transition-all ${
+                        selectedEmoji === emoji ? 'bg-neutral-900 text-white scale-110' : 'hover:bg-neutral-100'
+                      }`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Quick Times */}

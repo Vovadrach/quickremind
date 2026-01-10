@@ -1,13 +1,13 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
-import { Check, Trash2 } from 'lucide-react';
+import { Check, Trash2, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useI18n } from '@/hooks/useI18n';
 import { formatDateShort, formatMinutesShort, formatTime } from '@/utils/time';
 import type { Reminder } from '@/types';
 
 export function ActivePage() {
-  const { reminders, completeReminder, removeReminder } = useAppStore();
+  const { reminders, completeReminder, removeReminder, reopenReminder } = useAppStore();
   const { copy, formatCount } = useI18n();
   const activeReminders = useMemo(
     () => reminders.filter((r) => r.status === 'pending'),
@@ -96,7 +96,7 @@ export function ActivePage() {
             {completedReminders.slice(0, 3).map((rem) => (
               <div key={rem.id} className="flex items-center gap-3 py-1">
                 <span className="text-lg grayscale">{rem.icon}</span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <span className="text-sm font-medium line-through">
                     {rem.text || copy.active.reminderFallback}
                   </span>
@@ -106,6 +106,12 @@ export function ActivePage() {
                     </p>
                   )}
                 </div>
+                <button
+                  onClick={() => reopenReminder(rem.id)}
+                  className="p-2 text-neutral-300 hover:text-emerald-500 transition-colors"
+                >
+                  <RotateCcw size={16} />
+                </button>
               </div>
             ))}
           </div>
@@ -134,6 +140,7 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
   const { copy, language, formatCount } = useI18n();
   const [timeLeft, setTimeLeft] = useState(reminder.targetTime - Date.now());
   const [showDelete, setShowDelete] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
   const todayStr = new Date().toISOString().split('T')[0];
   const showDate = reminder.targetDate && reminder.targetDate !== todayStr;
   const timeLabel = formatTime(reminder.targetTime, language);
@@ -154,6 +161,12 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
     const timeout = window.setTimeout(() => setShowDelete(false), 2500);
     return () => window.clearTimeout(timeout);
   }, [showDelete]);
+
+  const handleComplete = () => {
+    if (isCompleting) return;
+    setIsCompleting(true);
+    window.setTimeout(() => onComplete(reminder.id), 150);
+  };
 
   const getTimeLabel = () => {
     if (timeLeft < 0) return copy.active.missed;
@@ -182,16 +195,20 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
       onPointerDown={() => setShowDelete(true)}
     >
       <div className="flex items-center gap-3">
-        <button
+        <motion.button
           onClick={(event) => {
             event.stopPropagation();
-            onComplete(reminder.id);
+            handleComplete();
           }}
           onPointerDown={(event) => event.stopPropagation()}
-          className="p-2 text-neutral-300 hover:text-emerald-500 transition-colors"
+          className={`p-2 transition-colors ${
+            isCompleting ? 'text-emerald-500' : 'text-neutral-300 hover:text-emerald-500'
+          }`}
+          animate={isCompleting ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+          transition={{ duration: 0.2 }}
         >
           <Check size={20} />
-        </button>
+        </motion.button>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">

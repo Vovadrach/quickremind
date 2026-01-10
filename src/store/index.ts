@@ -91,6 +91,7 @@ interface AppStore {
   // ====== REMINDER ACTIONS ======
   addReminder: (input: ReminderInput) => Reminder | null;
   completeReminder: (id: string) => void;
+  reopenReminder: (id: string) => void;
   removeReminder: (id: string) => void;
   postponeReminder: (id: string, minutes: number) => void;
   clearExpired: () => void;
@@ -411,6 +412,69 @@ export const useAppStore = create<AppStore>()(
           '✅',
           cpEarned
         );
+      },
+
+      reopenReminder: (id) => {
+        const { reminders, settings, beeModeSettings } = get();
+        const reminder = reminders.find((r) => r.id === id);
+        if (!reminder || reminder.status !== 'completed') return;
+
+        const now = Date.now();
+        const targetTime = reminder.targetTime < now ? now + TIME.MINUTE : reminder.targetTime;
+        const targetDate = getTargetDate(targetTime);
+        const copy = getCopy(settings.language);
+        const today = getTodayDate();
+
+        if (reminder.notificationId) {
+          cancelNotification(reminder.notificationId);
+        }
+        if (reminder.beeNotificationIds?.length) {
+          cancelBeeNotifications(reminder.beeNotificationIds);
+        }
+
+        const notificationId = scheduleNotification({
+          title: reminder.text || copy.notifications.title,
+          body: copy.notifications.body,
+          scheduledTime: targetTime,
+        });
+
+        const reopened: Reminder = {
+          ...reminder,
+          status: 'pending',
+          completedAt: undefined,
+          completedOnTime: undefined,
+          targetTime,
+          targetDate,
+          notificationId,
+          beeNotificationIds: [],
+          beeCurrentStage: 0,
+          beeLastNotificationAt: null,
+        };
+
+        if (reopened.beeModeEnabled) {
+          reopened.beeNotificationIds = scheduleBeeNotifications(reopened, beeModeSettings, settings.language);
+        }
+
+        set((state) => ({
+          reminders: state.reminders
+            .map((r) => (r.id === id ? reopened : r))
+            .sort((a, b) => a.targetTime - b.targetTime),
+          dailyStats: {
+            ...state.dailyStats,
+            [today]: {
+              ...state.dailyStats[today] || { date: today, captured: 0, completed: 0, completedOnTime: 0, missed: 0, cpEarned: 0 },
+              completed: Math.max(0, (state.dailyStats[today]?.completed || 0) - 1),
+              completedOnTime: Math.max(
+                0,
+                (state.dailyStats[today]?.completedOnTime || 0) - (reminder.completedOnTime ? 1 : 0)
+              ),
+            },
+          },
+          userStats: {
+            ...state.userStats,
+            totalCompleted: Math.max(0, state.userStats.totalCompleted - 1),
+          },
+        }));
       },
 
       removeReminder: (id) => {

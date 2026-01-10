@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Info } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { BottomSheet } from '@/components/ui/Modal';
+import { BeeModeInfoSheet } from '@/components/settings/BeeModeInfoSheet';
 import { useI18n } from '@/hooks/useI18n';
 import { formatMinutesShort } from '@/utils/time';
 import type { BeeModeSettings } from '@/types';
@@ -9,6 +11,7 @@ export function BeeModeSettingsCard() {
   const { beeModeSettings, toggleBeeMode } = useAppStore();
   const { copy, language, formatMessage } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   const intervalLabel = useMemo(() => {
     const labels = beeModeSettings.intervals.map((value) =>
@@ -26,13 +29,23 @@ export function BeeModeSettingsCard() {
   return (
     <>
       <div className="bg-white border border-neutral-200 rounded-3xl p-6 notion-shadow">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-2xl bg-yellow-50 flex items-center justify-center text-lg">
               🐝
             </div>
             <div>
-              <p className="font-semibold text-neutral-900">{copy.beeMode.title}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-neutral-900">{copy.beeMode.title}</p>
+                <button
+                  type="button"
+                  onClick={() => setIsInfoOpen(true)}
+                  className="text-neutral-300 hover:text-neutral-600 transition-colors"
+                  aria-label={copy.beeMode.infoTitle}
+                >
+                  <Info size={16} />
+                </button>
+              </div>
               <p className="text-xs text-neutral-500">{copy.beeMode.description}</p>
             </div>
           </div>
@@ -72,6 +85,7 @@ export function BeeModeSettingsCard() {
       </div>
 
       <BeeModeModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <BeeModeInfoSheet isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
     </>
   );
 }

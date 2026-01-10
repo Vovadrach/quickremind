@@ -81,6 +81,8 @@ type Translation = {
   beeMode: {
     title: string;
     description: string;
+    infoTitle: string;
+    infoBody: string;
     intervalsLabel: string;
     repeatEvery: string;
     repeatOff: string;
@@ -307,6 +309,8 @@ const ru: Translation = {
   beeMode: {
     title: 'Bee Mode',
     description: 'Повторные уведомления пока не выполните',
+    infoTitle: 'Что такое Bee Mode',
+    infoBody: 'Bee Mode отправляет повторные напоминания, пока задача не выполнена.\nВыберите интервалы и повтор, а в «Не беспокоить» уведомления не приходят.',
     intervalsLabel: 'Интервалы',
     repeatEvery: 'каждые {interval}',
     repeatOff: 'без повтора',
@@ -562,6 +566,8 @@ const uk: Translation = {
   beeMode: {
     title: 'Bee Mode',
     description: 'Повторні сповіщення поки не виконаєте',
+    infoTitle: 'Що таке Bee Mode',
+    infoBody: 'Bee Mode надсилає повторні нагадування, доки задача не виконана.\nОберіть інтервали й повтор, а в режимі «Не турбувати» сповіщення не приходять.',
     intervalsLabel: 'Інтервали',
     repeatEvery: 'кожні {interval}',
     repeatOff: 'без повтору',
