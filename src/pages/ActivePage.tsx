@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
-import { Check, Trash2, Clock } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useI18n } from '@/hooks/useI18n';
 import { formatDateShort, formatMinutesShort, formatTime } from '@/utils/time';
