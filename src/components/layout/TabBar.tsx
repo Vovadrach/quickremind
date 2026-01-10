@@ -1,4 +1,4 @@
-import { Zap, List, Plus, BarChart3, User } from 'lucide-react';
+import { ListChecks, List, Plus, BarChart3, User } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { useI18n } from '@/hooks/useI18n';
 
@@ -7,7 +7,7 @@ export function TabBar() {
   const { copy } = useI18n();
 
   const tabs = [
-    { id: 'commands', icon: <Zap size={20} />, label: copy.tabs.commands },
+    { id: 'commands', icon: <ListChecks size={20} />, label: copy.tabs.commands },
     { id: 'active', icon: <List size={20} />, label: copy.tabs.active },
     { id: 'capture', icon: <Plus size={24} />, label: copy.tabs.capture },
     { id: 'stats', icon: <BarChart3 size={20} />, label: copy.tabs.stats },

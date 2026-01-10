@@ -31,6 +31,8 @@ type Translation = {
     hoursLabel: string;
     minutesLabel: string;
     notePlaceholder: string;
+    emojiAddLabel: string;
+    emojiClearLabel: string;
     todayButton: string;
     otherDateButton: string;
     todayAlert: string;
@@ -239,7 +241,7 @@ type Translation = {
 
 const ru: Translation = {
   tabs: {
-    commands: 'Быстро',
+    commands: 'Команды',
     active: 'Активные',
     capture: 'Создать',
     stats: 'Стат.',
@@ -259,6 +261,8 @@ const ru: Translation = {
     minuteStepExact: '1 мин',
     hoursLabel: 'Часы',
     minutesLabel: 'Минуты',
+    emojiAddLabel: 'Добавить эмодзи',
+    emojiClearLabel: 'Убрать эмодзи',
     todayButton: 'Сегодня ▼',
     otherDateButton: 'Другая дата',
     todayAlert: 'Выбор дня скоро будет доступен!',
@@ -496,7 +500,7 @@ const ru: Translation = {
 
 const uk: Translation = {
   tabs: {
-    commands: 'Швидко',
+    commands: 'Команди',
     active: 'Активні',
     capture: 'Створити',
     stats: 'Стат.',
@@ -516,6 +520,8 @@ const uk: Translation = {
     minuteStepExact: '1 хв',
     hoursLabel: 'Години',
     minutesLabel: 'Хвилини',
+    emojiAddLabel: 'Додати емодзі',
+    emojiClearLabel: 'Прибрати емодзі',
     todayButton: 'Сьогодні ▼',
     otherDateButton: 'Інша дата',
     todayAlert: 'Вибір дня скоро буде доступний!',

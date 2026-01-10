@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Calendar, CheckCircle2, ChevronRight, Plus, X } from 'lucide-react';
 import { useI18n } from '@/hooks/useI18n';
 import { formatDateShort, formatMinutesShort } from '@/utils/time';
 import { TimePickerWheel } from '@/components/ui/TimePickerWheel';
@@ -109,15 +109,20 @@ export function CapturePage() {
 
       <div className="space-y-6">
         <div className="py-2 space-y-3">
-          <div className="flex gap-3 items-start">
+          <div className="flex gap-3 items-center">
             <button
               type="button"
               onClick={() => setIsEmojiPickerOpen((prev) => !prev)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border transition-colors ${
-                selectedEmoji ? 'border-transparent bg-neutral-50' : 'border-neutral-200 bg-transparent'
+              aria-label={copy.capture.emojiAddLabel}
+              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-colors ${
+                selectedEmoji ? 'border-transparent bg-neutral-50' : 'border-neutral-200 bg-white'
               }`}
             >
-              {selectedEmoji && <span className="text-2xl">{selectedEmoji}</span>}
+              {selectedEmoji ? (
+                <span className="text-base">{selectedEmoji}</span>
+              ) : (
+                <Plus size={14} strokeWidth={1.5} className="text-neutral-300" />
+              )}
             </button>
             <textarea
               value={text}
@@ -143,6 +148,17 @@ export function CapturePage() {
                 className="overflow-hidden"
               >
                 <div className="grid grid-cols-8 gap-2 p-3 bg-neutral-50 rounded-2xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedEmoji(null);
+                      setIsEmojiPickerOpen(false);
+                    }}
+                    aria-label={copy.capture.emojiClearLabel}
+                    className="p-2 rounded-xl text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-all"
+                  >
+                    <X size={16} />
+                  </button>
                   {EMOJI_OPTIONS.map((emoji) => (
                     <button
                       key={emoji}

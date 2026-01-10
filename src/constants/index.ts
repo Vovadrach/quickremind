@@ -32,7 +32,7 @@ export const TIME = {
 
 // Tab configuration
 export const TABS = [
-  { id: 'commands', label: 'Быстро', icon: '⚡' },
+  { id: 'commands', label: 'Команды', icon: '📝' },
   { id: 'active', label: 'Активные', icon: '📋' },
   { id: 'capture', label: 'Создать', icon: '➕' },
   { id: 'stats', label: 'Стат.', icon: '📊' },
