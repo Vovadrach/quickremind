@@ -8,7 +8,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useI18n } from '@/hooks/useI18n';
 
 export default function App() {
-  const { activeTab, toast, hideToast, clearExpired, updateStreak } = useAppStore();
+  const { activeTab, toast, hideToast, clearExpired, updateStreak, generateRemindersForToday } = useAppStore();
   const { isSupported, permission, requestPermission } = useNotifications();
   const { copy } = useI18n();
 
@@ -19,6 +19,29 @@ export default function App() {
     const interval = setInterval(clearExpired, 60000);
     return () => clearInterval(interval);
   }, [clearExpired, updateStreak]);
+
+  useEffect(() => {
+    generateRemindersForToday();
+
+    let timeoutId: number | null = null;
+    const scheduleNext = () => {
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+      const delay = nextMidnight.getTime() - now.getTime();
+      timeoutId = window.setTimeout(() => {
+        generateRemindersForToday();
+        scheduleNext();
+      }, delay);
+    };
+
+    scheduleNext();
+    return () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [generateRemindersForToday]);
 
   const renderPage = () => {
     switch (activeTab) {

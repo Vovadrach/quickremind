@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
 import { Play, Plus, X, Trash2, Clock, Check, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { QuickCommand, TimeOption } from '@/types';
+import type { QuickCommand, TimeOption, RecurringTask } from '@/types';
 import { EMOJI_OPTIONS } from '@/constants';
 import { useI18n } from '@/hooks/useI18n';
 import { formatMinutesShort } from '@/utils/time';
+import { RecurringTaskCard } from '@/components/recurring/RecurringTaskCard';
+import { RecurringTaskEditor, type RecurringTaskInput } from '@/components/recurring/RecurringTaskEditor';
 
 export function CommandsPage() {
   const {
@@ -15,6 +17,12 @@ export function CommandsPage() {
     addCommand,
     updateCommand,
     deleteCommand,
+    recurringTasks,
+    addRecurringTask,
+    updateRecurringTask,
+    deleteRecurringTask,
+    toggleRecurringTaskActive,
+    beeModeSettings,
     showToast
   } = useAppStore();
   const { copy } = useI18n();
@@ -23,6 +31,9 @@ export function CommandsPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [modalType, setModalType] = useState<'create' | 'edit' | null>(null);
   const [editingCommand, setEditingCommand] = useState<QuickCommand | null>(null);
+  const [activeSection, setActiveSection] = useState<'commands' | 'recurring'>('commands');
+  const [recurringModalOpen, setRecurringModalOpen] = useState(false);
+  const [editingRecurringTask, setEditingRecurringTask] = useState<RecurringTask | null>(null);
 
   // Filter commands
   const filteredCommands = commands.filter((c) =>
@@ -50,6 +61,7 @@ export function CommandsPage() {
       updateCommand(editingCommand.id, {
         name: data.name,
         icon: data.icon,
+        note: data.note,
         categoryId: data.categoryId,
         timeOptions: data.timeOptions,
       });
@@ -58,6 +70,7 @@ export function CommandsPage() {
       addCommand({
         name: data.name,
         icon: data.icon,
+        note: data.note,
         categoryId: data.categoryId,
         timeOptions: data.timeOptions,
       });
@@ -70,10 +83,43 @@ export function CommandsPage() {
     showToast(copy.toasts.commandDeleted, 'info', '🗑️');
   };
 
+  const handleOpenRecurringCreate = () => {
+    setEditingRecurringTask(null);
+    setRecurringModalOpen(true);
+  };
+
+  const handleOpenRecurringEdit = (task: RecurringTask) => {
+    setEditingRecurringTask(task);
+    setRecurringModalOpen(true);
+  };
+
+  const handleCloseRecurringModal = () => {
+    setRecurringModalOpen(false);
+    setEditingRecurringTask(null);
+  };
+
+  const handleSaveRecurring = (data: RecurringTaskInput) => {
+    if (editingRecurringTask) {
+      updateRecurringTask(editingRecurringTask.id, data);
+      showToast(copy.recurring.toastUpdated, 'success', '✅');
+    } else {
+      addRecurringTask(data);
+      showToast(copy.recurring.toastCreated, 'success', '🔁');
+    }
+    handleCloseRecurringModal();
+  };
+
+  const handleDeleteRecurring = (id: string) => {
+    deleteRecurringTask(id);
+    showToast(copy.recurring.toastDeleted, 'info', '🗑️');
+  };
+
   return (
     <div className="p-6 pb-24">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{copy.commands.title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
+          {activeSection === 'commands' ? copy.commands.title : copy.recurring.title}
+        </h1>
         <button
           onClick={() => setIsEditMode(!isEditMode)}
           className={`font-bold text-2xl w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
@@ -86,60 +132,117 @@ export function CommandsPage() {
         </button>
       </header>
 
-      <div className="relative mb-6">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder={copy.commands.searchPlaceholder}
-          className="w-full h-14 bg-white border border-neutral-200 rounded-2xl pl-12 pr-4 notion-shadow focus:outline-none focus:ring-2 focus:ring-neutral-900/5 transition-all text-sm font-medium"
-        />
-      </div>
-
-      <div className="space-y-6">
-        {categories.map((cat) => {
-          const catCommands = filteredCommands.filter((c) => c.categoryId === cat.id);
-          if (catCommands.length === 0) return null;
-          return (
-            <CategorySection key={cat.id} title={cat.name.toUpperCase()}>
-              <AnimatePresence mode="popLayout">
-                {catCommands.map((cmd) => (
-                  <CommandCard
-                    key={cmd.id}
-                    command={cmd}
-                    isEditMode={isEditMode}
-                    onExecute={() => executeCommand(cmd.id)}
-                    onEdit={() => handleOpenEdit(cmd)}
-                    onDelete={() => handleDelete(cmd.id)}
-                  />
-                ))}
-              </AnimatePresence>
-            </CategorySection>
-          );
-        })}
-
-        {filteredCommands.length === 0 && searchTerm && (
-          <div className="text-center py-10 text-neutral-400 font-medium">
-            {copy.commands.emptySearch}
-          </div>
-        )}
-
-        {filteredCommands.length === 0 && !searchTerm && (
-          <div className="text-center py-10 text-neutral-400 font-medium">
-            <p className="mb-4">{copy.commands.emptyTitle}</p>
-            <p className="text-sm">{copy.commands.emptySubtitle}</p>
-          </div>
-        )}
-
+      <div className="bg-white border border-neutral-200 rounded-2xl p-1 flex mb-6 notion-shadow">
         <button
-          onClick={handleOpenCreate}
-          className="w-full h-16 border-2 border-dashed border-neutral-200 rounded-2xl flex items-center justify-center gap-2 text-neutral-400 font-bold hover:bg-neutral-50 transition-colors"
+          type="button"
+          onClick={() => setActiveSection('commands')}
+          className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
+            activeSection === 'commands'
+              ? 'bg-neutral-900 text-white'
+              : 'text-neutral-500 hover:bg-neutral-50'
+          }`}
         >
-          <Plus size={20} />
-          {copy.commands.newCommand}
+          ⚡ {copy.recurring.tabQuick}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection('recurring')}
+          className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
+            activeSection === 'recurring'
+              ? 'bg-neutral-900 text-white'
+              : 'text-neutral-500 hover:bg-neutral-50'
+          }`}
+        >
+          🔄 {copy.recurring.tabRecurring}
         </button>
       </div>
+
+      {activeSection === 'commands' ? (
+        <>
+          <div className="relative mb-6">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={copy.commands.searchPlaceholder}
+              className="w-full h-14 bg-white border border-neutral-200 rounded-2xl pl-12 pr-4 notion-shadow focus:outline-none focus:ring-2 focus:ring-neutral-900/5 transition-all text-sm font-medium"
+            />
+          </div>
+
+          <div className="space-y-6">
+            {categories.map((cat) => {
+              const catCommands = filteredCommands.filter((c) => c.categoryId === cat.id);
+              if (catCommands.length === 0) return null;
+              return (
+                <CategorySection key={cat.id} title={cat.name.toUpperCase()}>
+                  <AnimatePresence mode="popLayout">
+                    {catCommands.map((cmd) => (
+                      <CommandCard
+                        key={cmd.id}
+                        command={cmd}
+                        isEditMode={isEditMode}
+                        onExecute={() => executeCommand(cmd.id)}
+                        onEdit={() => handleOpenEdit(cmd)}
+                        onDelete={() => handleDelete(cmd.id)}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </CategorySection>
+              );
+            })}
+
+            {filteredCommands.length === 0 && searchTerm && (
+              <div className="text-center py-10 text-neutral-400 font-medium">
+                {copy.commands.emptySearch}
+              </div>
+            )}
+
+            {filteredCommands.length === 0 && !searchTerm && (
+              <div className="text-center py-10 text-neutral-400 font-medium">
+                <p className="mb-4">{copy.commands.emptyTitle}</p>
+                <p className="text-sm">{copy.commands.emptySubtitle}</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleOpenCreate}
+              className="w-full h-16 border-2 border-dashed border-neutral-200 rounded-2xl flex items-center justify-center gap-2 text-neutral-400 font-bold hover:bg-neutral-50 transition-colors"
+            >
+              <Plus size={20} />
+              {copy.commands.newCommand}
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-4">
+          {recurringTasks.length === 0 ? (
+            <div className="text-center py-10 text-neutral-400 font-medium">
+              <p className="mb-4">{copy.recurring.emptyTitle}</p>
+              <p className="text-sm">{copy.recurring.emptySubtitle}</p>
+            </div>
+          ) : (
+            recurringTasks.map((task) => (
+              <RecurringTaskCard
+                key={task.id}
+                task={task}
+                isEditMode={isEditMode}
+                onToggleActive={() => toggleRecurringTaskActive(task.id)}
+                onEdit={() => handleOpenRecurringEdit(task)}
+                onDelete={() => handleDeleteRecurring(task.id)}
+              />
+            ))
+          )}
+
+          <button
+            onClick={handleOpenRecurringCreate}
+            className="w-full h-16 border-2 border-dashed border-neutral-200 rounded-2xl flex items-center justify-center gap-2 text-neutral-400 font-bold hover:bg-neutral-50 transition-colors"
+          >
+            <Plus size={20} />
+            {copy.recurring.newTask}
+          </button>
+        </div>
+      )}
 
       {/* Command Editor Modal */}
       <AnimatePresence>
@@ -153,6 +256,14 @@ export function CommandsPage() {
           />
         )}
       </AnimatePresence>
+
+      <RecurringTaskEditor
+        isOpen={recurringModalOpen}
+        onClose={handleCloseRecurringModal}
+        onSave={handleSaveRecurring}
+        task={editingRecurringTask}
+        defaultBeeEnabled={beeModeSettings.enabled}
+      />
     </div>
   );
 }
@@ -177,15 +288,19 @@ interface CommandCardProps {
 }
 
 function CommandCard({ command, isEditMode, onExecute, onEdit, onDelete }: CommandCardProps) {
-  const { selectCommandTime, selectedCommandTimeIndex } = useAppStore();
+  const { selectCommandTime } = useAppStore();
   const { copy } = useI18n();
-  const selectedIdx = selectedCommandTimeIndex[command.id] ?? 0;
   const [showSuccess, setShowSuccess] = useState(false);
+  const [flashIndex, setFlashIndex] = useState<number | null>(null);
 
-  const handleExecute = () => {
+  const handleExecute = (timeIndex: number) => {
+    if (isEditMode) return;
+    selectCommandTime(command.id, timeIndex);
     onExecute();
     setShowSuccess(true);
+    setFlashIndex(timeIndex);
     setTimeout(() => setShowSuccess(false), 1500);
+    setTimeout(() => setFlashIndex(null), 400);
   };
 
   const handleCardClick = () => {
@@ -201,7 +316,7 @@ function CommandCard({ command, isEditMode, onExecute, onEdit, onDelete }: Comma
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95, x: -100 }}
       transition={{ duration: 0.2 }}
-      className="bg-white border border-neutral-200 rounded-2xl p-5 notion-shadow flex items-center justify-between relative overflow-hidden"
+      className="bg-white border border-neutral-200 rounded-2xl p-5 notion-shadow flex items-center gap-4 relative overflow-hidden"
     >
       <div
         className="flex-1 cursor-pointer"
@@ -211,39 +326,38 @@ function CommandCard({ command, isEditMode, onExecute, onEdit, onDelete }: Comma
           <span className="text-2xl">{command.icon}</span>
           <span className="font-bold text-neutral-900">{command.name}</span>
         </div>
+        {command.note && (
+          <p className="text-xs text-neutral-500 mb-3 leading-relaxed line-clamp-2">
+            {command.note}
+          </p>
+        )}
         <div className="flex gap-2 flex-wrap">
           {command.timeOptions.map((opt, idx) => (
             <button
               key={idx}
               onClick={(e) => {
                 e.stopPropagation();
-                selectCommandTime(command.id, idx);
+                handleExecute(idx);
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                selectedIdx === idx
-                  ? 'bg-neutral-900 border-neutral-900 text-white'
+              className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                flashIndex === idx
+                  ? 'bg-blue-600 border-blue-600 text-white scale-95'
                   : 'bg-neutral-50 border-neutral-100 text-neutral-600 hover:bg-neutral-100'
               }`}
             >
-              {opt.label}
+              <span>{opt.label}</span>
+              <Play size={12} className={flashIndex === idx ? 'text-white' : 'text-neutral-400'} />
             </button>
           ))}
         </div>
       </div>
 
-      {isEditMode ? (
+      {isEditMode && (
         <button
           onClick={onDelete}
           className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-90 transition-all hover:bg-rose-600"
         >
           <Trash2 size={20} />
-        </button>
-      ) : (
-        <button
-          onClick={handleExecute}
-          className="w-12 h-12 bg-neutral-900 rounded-2xl flex items-center justify-center text-white notion-shadow active:scale-90 transition-all hover:bg-neutral-800"
-        >
-          <Play size={20} fill="currentColor" />
         </button>
       )}
 
@@ -267,6 +381,7 @@ function CommandCard({ command, isEditMode, onExecute, onEdit, onDelete }: Comma
 interface CommandFormData {
   name: string;
   icon: string;
+  note?: string;
   categoryId: string;
   timeOptions: TimeOption[];
 }
@@ -283,6 +398,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
   const { copy, language } = useI18n();
   const [name, setName] = useState(command?.name || '');
   const [icon, setIcon] = useState(command?.icon || '⚡');
+  const [note, setNote] = useState(command?.note || '');
   const [categoryId, setCategoryId] = useState(command?.categoryId || categories[0]?.id || 'daily');
   const [timeOptions, setTimeOptions] = useState<TimeOption[]>(
     command?.timeOptions || [{ type: 'relative', value: 15, label: `+${formatMinutesShort(15, language)}` }]
@@ -310,7 +426,7 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
     if (!name.trim()) return;
     if (timeOptions.length === 0) return;
 
-    onSave({ name: name.trim(), icon, categoryId, timeOptions });
+    onSave({ name: name.trim(), icon, note: note.trim() || undefined, categoryId, timeOptions });
   };
 
   const addTimeOption = (opt: TimeOption) => {
@@ -370,6 +486,18 @@ function CommandEditorModal({ mode, command, categories, onSave, onClose }: Comm
                 className="w-full bg-neutral-50 rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-neutral-900/5"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-1">
+              {copy.commands.noteLabel}
+            </label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={copy.commands.notePlaceholder}
+              className="w-full bg-neutral-50 rounded-2xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-neutral-900/5 text-sm resize-none min-h-[72px]"
+            />
           </div>
 
           {/* Emoji Picker */}

@@ -122,6 +122,11 @@ export function ReminderCard({ reminder, onDelete }: ReminderCardProps) {
           <p className={cn('text-sm', isExpired ? 'text-danger' : 'text-text-tertiary')}>
             {isExpired ? copy.active.timeExpired : `${copy.active.timeLeftPrefix} ${formatted}`}
           </p>
+          {reminder.note && (
+            <p className="text-xs text-text-tertiary mt-1 line-clamp-2">
+              {reminder.note}
+            </p>
+          )}
         </div>
 
         {/* Time */}

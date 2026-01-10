@@ -30,6 +30,7 @@ type Translation = {
     minuteStepExact: string;
     hoursLabel: string;
     minutesLabel: string;
+    notePlaceholder: string;
     todayButton: string;
     otherDateButton: string;
     todayAlert: string;
@@ -65,6 +66,8 @@ type Translation = {
     modalTitleEdit: string;
     labelName: string;
     placeholderName: string;
+    noteLabel: string;
+    notePlaceholder: string;
     labelCategory: string;
     labelTimeOptions: string;
     addTime: string;
@@ -74,6 +77,77 @@ type Translation = {
     add: string;
     create: string;
     save: string;
+  };
+  beeMode: {
+    title: string;
+    description: string;
+    intervalsLabel: string;
+    repeatEvery: string;
+    repeatOff: string;
+    quietHoursLabel: string;
+    quietHoursUntil: string;
+    configure: string;
+    modalTitle: string;
+    modalDescription: string;
+    intervalFirst: string;
+    intervalSecond: string;
+    intervalThird: string;
+    intervalFourth: string;
+    intervalRepeat: string;
+    save: string;
+    nextLabel: string;
+    notificationReminderTitle: string;
+    notificationReminderBody: string;
+    notificationStillTitle: string;
+    notificationStillBody: string;
+    notificationHourTitle: string;
+    notificationHourBody: string;
+    notificationTwoHoursTitle: string;
+    notificationTwoHoursBody: string;
+    notificationLastTitle: string;
+    notificationLastBody: string;
+  };
+  recurring: {
+    title: string;
+    tabQuick: string;
+    tabRecurring: string;
+    emptyTitle: string;
+    emptySubtitle: string;
+    newTask: string;
+    modalTitleCreate: string;
+    modalTitleEdit: string;
+    labelName: string;
+    placeholderName: string;
+    labelRepeat: string;
+    repeatDaily: string;
+    repeatWeekly: string;
+    repeatMonthly: string;
+    repeatCustom: string;
+    labelTime: string;
+    noteLabel: string;
+    notePlaceholder: string;
+    labelWeekdays: string;
+    labelMonthDay: string;
+    labelLastDay: string;
+    labelCustomEvery: string;
+    labelStartDate: string;
+    labelBeeMode: string;
+    create: string;
+    save: string;
+    pause: string;
+    resume: string;
+    summaryDaily: string;
+    summaryWeekly: string;
+    summaryMonthly: string;
+    summaryMonthlyLast: string;
+    summaryCustom: string;
+    unitDays: string;
+    unitWeeks: string;
+    unitMonths: string;
+    nextLabel: string;
+    toastCreated: string;
+    toastUpdated: string;
+    toastDeleted: string;
   };
   stats: {
     title: string;
@@ -171,7 +245,8 @@ const ru: Translation = {
   },
   capture: {
     todayCp: '+{count} CP сегодня',
-    placeholder: '💭 О чем не забыть?',
+    placeholder: 'О чем не забыть?',
+    notePlaceholder: 'Добавить заметку',
     quickHeader: 'Быстро',
     customHeader: 'Или выбери время',
     dateButtonLabel: 'Дата',
@@ -217,6 +292,8 @@ const ru: Translation = {
     modalTitleEdit: 'Редактировать команду',
     labelName: 'НАЗВАНИЕ',
     placeholderName: 'Например: Читать книгу',
+    noteLabel: 'ЗАМЕТКА',
+    notePlaceholder: 'Добавить заметку',
     labelCategory: 'КАТЕГОРИЯ',
     labelTimeOptions: 'ВАРИАНТЫ ВРЕМЕНИ',
     addTime: 'Добавить',
@@ -226,6 +303,77 @@ const ru: Translation = {
     add: 'Добавить',
     create: 'СОЗДАТЬ',
     save: 'СОХРАНИТЬ',
+  },
+  beeMode: {
+    title: 'Bee Mode',
+    description: 'Повторные уведомления пока не выполните',
+    intervalsLabel: 'Интервалы',
+    repeatEvery: 'каждые {interval}',
+    repeatOff: 'без повтора',
+    quietHoursLabel: 'Не беспокоить после',
+    quietHoursUntil: 'до',
+    configure: 'Настроить',
+    modalTitle: 'Bee Mode',
+    modalDescription: 'Этот режим будет напоминать о невыполненных задачах через заданные интервалы.',
+    intervalFirst: 'Первое напоминание',
+    intervalSecond: 'Второе напоминание',
+    intervalThird: 'Третье напоминание',
+    intervalFourth: 'Четвертое напоминание',
+    intervalRepeat: 'Дальше каждые',
+    save: 'Сохранить',
+    nextLabel: 'Следующее напоминание: {time}',
+    notificationReminderTitle: '🐝 Напоминание: {text}',
+    notificationReminderBody: 'Прошло {minutes} мин',
+    notificationStillTitle: '🐝 Вы все еще не выполнили: {text}',
+    notificationStillBody: 'Прошло уже {minutes} мин',
+    notificationHourTitle: '🐝 Час прошел! {text}',
+    notificationHourBody: 'Выполните, чтобы сохранить streak 🔥',
+    notificationTwoHoursTitle: '🐝🐝 Серьезно? {text}',
+    notificationTwoHoursBody: '2 часа ожидания!',
+    notificationLastTitle: '🐝 🌙 Последний шанс сегодня',
+    notificationLastBody: '{text}',
+  },
+  recurring: {
+    title: 'Повторяющиеся задачи',
+    tabQuick: 'Быстрые',
+    tabRecurring: 'Повтор.',
+    emptyTitle: 'Пока нет повторяющихся задач',
+    emptySubtitle: 'Создайте первую задачу',
+    newTask: 'Новая повторяющаяся задача',
+    modalTitleCreate: 'Новая повторяющаяся задача',
+    modalTitleEdit: 'Редактировать задачу',
+    labelName: 'НАЗВАНИЕ',
+    placeholderName: 'Например: Выпить витамины',
+    labelRepeat: 'ПОВТОРЕНИЕ',
+    repeatDaily: 'Ежедневно',
+    repeatWeekly: 'Еженедельно',
+    repeatMonthly: 'Ежемесячно',
+    repeatCustom: 'Другое',
+    labelTime: 'ВРЕМЯ',
+    noteLabel: 'ЗАМЕТКА',
+    notePlaceholder: 'Добавить заметку',
+    labelWeekdays: 'Выберите дни',
+    labelMonthDay: 'Каждого',
+    labelLastDay: 'Последний день месяца',
+    labelCustomEvery: 'Каждые',
+    labelStartDate: 'Начать с',
+    labelBeeMode: 'Bee Mode',
+    create: 'СОЗДАТЬ',
+    save: 'СОХРАНИТЬ',
+    pause: 'Пауза',
+    resume: 'Продолжить',
+    summaryDaily: 'Каждый день в {time}',
+    summaryWeekly: '{days} в {time}',
+    summaryMonthly: 'Каждого {day}-го в {time}',
+    summaryMonthlyLast: 'В последний день месяца в {time}',
+    summaryCustom: 'Каждые {count} {unit} в {time}',
+    unitDays: 'дн.',
+    unitWeeks: 'нед.',
+    unitMonths: 'мес.',
+    nextLabel: 'Следующее: {date} · {time}',
+    toastCreated: 'Повторяющаяся задача создана',
+    toastUpdated: 'Повторяющаяся задача обновлена',
+    toastDeleted: 'Повторяющаяся задача удалена',
   },
   stats: {
     title: 'Статистика',
@@ -352,7 +500,8 @@ const uk: Translation = {
   },
   capture: {
     todayCp: '+{count} CP сьогодні',
-    placeholder: '💭 Про що не забути?',
+    placeholder: 'Про що не забути?',
+    notePlaceholder: 'Додати нотатку',
     quickHeader: 'Швидко',
     customHeader: 'Або обери час',
     dateButtonLabel: 'Дата',
@@ -398,6 +547,8 @@ const uk: Translation = {
     modalTitleEdit: 'Редагувати команду',
     labelName: 'НАЗВА',
     placeholderName: 'Наприклад: Читати книгу',
+    noteLabel: 'НОТАТКА',
+    notePlaceholder: 'Додати нотатку',
     labelCategory: 'КАТЕГОРІЯ',
     labelTimeOptions: 'ВАРІАНТИ ЧАСУ',
     addTime: 'Додати',
@@ -407,6 +558,77 @@ const uk: Translation = {
     add: 'Додати',
     create: 'СТВОРИТИ',
     save: 'ЗБЕРЕГТИ',
+  },
+  beeMode: {
+    title: 'Bee Mode',
+    description: 'Повторні сповіщення поки не виконаєте',
+    intervalsLabel: 'Інтервали',
+    repeatEvery: 'кожні {interval}',
+    repeatOff: 'без повтору',
+    quietHoursLabel: 'Не турбувати після',
+    quietHoursUntil: 'до',
+    configure: 'Налаштувати',
+    modalTitle: 'Bee Mode',
+    modalDescription: 'Цей режим буде нагадувати про невиконані задачі через задані інтервали.',
+    intervalFirst: 'Перше нагадування',
+    intervalSecond: 'Друге нагадування',
+    intervalThird: 'Третє нагадування',
+    intervalFourth: 'Четверте нагадування',
+    intervalRepeat: 'Далі кожні',
+    save: 'Зберегти',
+    nextLabel: 'Наступне нагадування: {time}',
+    notificationReminderTitle: '🐝 Нагадування: {text}',
+    notificationReminderBody: 'Минуло {minutes} хв',
+    notificationStillTitle: '🐝 Ви досі не виконали: {text}',
+    notificationStillBody: 'Минуло вже {minutes} хв',
+    notificationHourTitle: '🐝 Година минула! {text}',
+    notificationHourBody: 'Виконайте, щоб зберегти streak 🔥',
+    notificationTwoHoursTitle: '🐝🐝 Серйозно? {text}',
+    notificationTwoHoursBody: '2 години очікування!',
+    notificationLastTitle: '🐝 🌙 Останній шанс сьогодні',
+    notificationLastBody: '{text}',
+  },
+  recurring: {
+    title: 'Повторювані задачі',
+    tabQuick: 'Швидкі',
+    tabRecurring: 'Повтор.',
+    emptyTitle: 'Поки немає повторюваних задач',
+    emptySubtitle: 'Створіть першу задачу',
+    newTask: 'Нова повторювана задача',
+    modalTitleCreate: 'Нова повторювана задача',
+    modalTitleEdit: 'Редагувати задачу',
+    labelName: 'НАЗВА',
+    placeholderName: 'Наприклад: Випити вітаміни',
+    labelRepeat: 'ПОВТОРЕННЯ',
+    repeatDaily: 'Щодня',
+    repeatWeekly: 'Щотижня',
+    repeatMonthly: 'Щомісяця',
+    repeatCustom: 'Інше',
+    labelTime: 'ЧАС',
+    noteLabel: 'НОТАТКА',
+    notePlaceholder: 'Додати нотатку',
+    labelWeekdays: 'Оберіть дні',
+    labelMonthDay: 'Кожного',
+    labelLastDay: 'Останній день місяця',
+    labelCustomEvery: 'Кожні',
+    labelStartDate: 'Почати з',
+    labelBeeMode: 'Bee Mode',
+    create: 'СТВОРИТИ',
+    save: 'ЗБЕРЕГТИ',
+    pause: 'Пауза',
+    resume: 'Продовжити',
+    summaryDaily: 'Щодня о {time}',
+    summaryWeekly: '{days} о {time}',
+    summaryMonthly: 'Кожного {day}-го о {time}',
+    summaryMonthlyLast: 'В останній день місяця о {time}',
+    summaryCustom: 'Кожні {count} {unit} о {time}',
+    unitDays: 'дн.',
+    unitWeeks: 'тиж.',
+    unitMonths: 'міс.',
+    nextLabel: 'Наступне: {date} · {time}',
+    toastCreated: 'Повторювана задача створена',
+    toastUpdated: 'Повторювана задача оновлена',
+    toastDeleted: 'Повторювана задача видалена',
   },
   stats: {
     title: 'Статистика',

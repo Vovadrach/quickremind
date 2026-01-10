@@ -150,6 +150,11 @@ export function ReminderCardNew({ reminder }: ReminderCardNewProps) {
                   {formatTime(reminder.targetTime)} · {isOverdue ? '' : 'через '}
                   {timeLeft}
                 </p>
+                {reminder.note && (
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1 line-clamp-2">
+                    {reminder.note}
+                  </p>
+                )}
               </div>
 
               {/* Actions */}

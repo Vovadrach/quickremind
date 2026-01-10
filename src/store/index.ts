@@ -8,6 +8,8 @@ import type {
   DailyStats,
   UserStats,
   AppSettings,
+  BeeModeSettings,
+  RecurringTask,
   ToastState,
   ToastType,
   TabId,
@@ -18,12 +20,16 @@ import { formatMinutesShort } from '@/utils/time';
 import { LIMITS, STORAGE_KEYS, TIME } from '@/constants';
 import { DEFAULT_CATEGORIES, DEFAULT_COMMANDS, CP_REWARDS, ACHIEVEMENTS, LEVEL_THRESHOLDS } from '@/constants';
 import { scheduleNotification, cancelNotification } from '@/services/notifications';
+import { scheduleBeeNotifications, cancelBeeNotifications, DEFAULT_BEE_MODE_SETTINGS } from '@/services/beeMode';
 import { formatMessage, formatCount, getCopy, getAchievementCopy } from '@/i18n';
+import { getNextOccurrence, isSameDay } from '@/utils/recurrence';
 
 // ====== HELPER FUNCTIONS ======
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
 const getTargetDate = (targetTime: number) => new Date(targetTime).toISOString().split('T')[0];
+
+const getDateKey = (date: Date) => date.toISOString().split('T')[0];
 
 const calculateLevel = (totalCP: number): number => {
   for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
@@ -31,6 +37,15 @@ const calculateLevel = (totalCP: number): number => {
   }
   return 1;
 };
+
+const createRecurringStats = () => ({
+  totalGenerated: 0,
+  totalCompleted: 0,
+  totalMissed: 0,
+  currentStreak: 0,
+  longestStreak: 0,
+  lastCompletedAt: null as number | null,
+});
 
 // ====== STORE INTERFACE ======
 interface AppStore {
@@ -51,6 +66,9 @@ interface AppStore {
   categories: Category[];
   selectedCommandTimeIndex: Record<string, number>;
 
+  // ====== RECURRING TASKS ======
+  recurringTasks: RecurringTask[];
+
   // ====== STATS ======
   dailyStats: Record<string, DailyStats>;
   userStats: UserStats;
@@ -58,6 +76,7 @@ interface AppStore {
   // ====== SETTINGS ======
   settings: AppSettings;
   isPremium: boolean;
+  beeModeSettings: BeeModeSettings;
 
   // ====== UI ACTIONS ======
   setActiveTab: (tab: TabId) => void;
@@ -84,6 +103,15 @@ interface AppStore {
   deleteCommand: (id: string) => void;
   addCategory: (category: Omit<Category, 'id' | 'order'>) => void;
 
+  // ====== RECURRING TASK ACTIONS ======
+  addRecurringTask: (task: Omit<RecurringTask, 'id' | 'createdAt' | 'stats'>) => void;
+  updateRecurringTask: (id: string, updates: Partial<RecurringTask>) => void;
+  deleteRecurringTask: (id: string) => void;
+  toggleRecurringTaskActive: (id: string) => void;
+  generateRemindersForToday: () => void;
+  generateNextReminder: (taskId: string) => void;
+  updateRecurringTaskStats: (taskId: string, completed: boolean) => void;
+
   // ====== STATS ACTIONS ======
   addCP: (amount: number, reason?: string) => void;
   updateStreak: () => void;
@@ -91,6 +119,8 @@ interface AppStore {
 
   // ====== SETTINGS ACTIONS ======
   updateSettings: (updates: Partial<AppSettings>) => void;
+  updateBeeModeSettings: (updates: Partial<BeeModeSettings>) => void;
+  toggleBeeMode: () => void;
 }
 
 // ====== DEFAULT VALUES ======
@@ -111,6 +141,10 @@ const defaultSettings: AppSettings = {
   vibrationEnabled: true,
   darkMode: false,
   language: 'ru',
+};
+
+const defaultBeeModeSettings: BeeModeSettings = {
+  ...DEFAULT_BEE_MODE_SETTINGS,
 };
 
 const defaultToast: ToastState = {
@@ -144,10 +178,12 @@ export const useAppStore = create<AppStore>()(
       commands: DEFAULT_COMMANDS,
       categories: DEFAULT_CATEGORIES,
       selectedCommandTimeIndex: {},
+      recurringTasks: [],
       dailyStats: {},
       userStats: defaultUserStats,
       settings: defaultSettings,
       isPremium: false,
+      beeModeSettings: defaultBeeModeSettings,
 
       // ====== UI ACTIONS ======
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -199,6 +235,7 @@ export const useAppStore = create<AppStore>()(
           captureStartTime,
           userStats,
           settings,
+          beeModeSettings,
         } = get();
         const language = settings.language;
         const copy = getCopy(language);
@@ -213,14 +250,21 @@ export const useAppStore = create<AppStore>()(
           return null;
         }
 
-        if (input.minutes < LIMITS.MIN_MINUTES) {
+        const now = Date.now();
+        const computedMinutes = input.targetTime
+          ? Math.round((input.targetTime - now) / 60000)
+          : input.minutes;
+
+        if (computedMinutes < LIMITS.MIN_MINUTES) {
           showToast(copy.toasts.minMinutes, 'error');
           return null;
         }
 
-        const now = Date.now();
-        const targetTime = now + input.minutes * 60 * 1000;
+        const isSilent = Boolean(input.silent);
+        const targetTime = input.targetTime ?? (now + computedMinutes * 60 * 1000);
         const targetDate = input.targetDate || getTargetDate(targetTime);
+        const beeModeEnabled = input.beeModeEnabled ?? beeModeSettings.enabled;
+        const noteValue = input.note?.trim();
 
         const notificationId = scheduleNotification({
           title: input.text || copy.notifications.title,
@@ -238,13 +282,24 @@ export const useAppStore = create<AppStore>()(
           notificationId,
           status: 'pending',
           sourceCommandId: input.sourceCommandId,
+          note: noteValue || null,
+          beeModeEnabled,
+          beeNotificationIds: [],
+          beeCurrentStage: 0,
+          beeLastNotificationAt: null,
+          recurringTaskId: input.recurringTaskId,
+          isRecurringInstance: input.isRecurringInstance ?? false,
         };
+
+        if (beeModeEnabled) {
+          reminder.beeNotificationIds = scheduleBeeNotifications(reminder, beeModeSettings, language);
+        }
 
         set((state) => ({
           reminders: [...state.reminders, reminder].sort((a, b) => a.targetTime - b.targetTime),
-          inputText: '',
-          selectedDate: null,
-          captureStartTime: null,
+          inputText: isSilent ? state.inputText : '',
+          selectedDate: isSilent ? state.selectedDate : null,
+          captureStartTime: isSilent ? state.captureStartTime : null,
         }));
 
         // Update stats
@@ -263,34 +318,40 @@ export const useAppStore = create<AppStore>()(
           },
         }));
 
-        // Add CP for creating reminder
-        addCP(CP_REWARDS.createReminder);
+        if (!isSilent) {
+          // Add CP for creating reminder
+          addCP(CP_REWARDS.createReminder);
+        }
 
         // Check for speed capture achievement
-        if (captureStartTime && (now - captureStartTime) <= 3000) {
+        if (!isSilent && captureStartTime && (now - captureStartTime) <= 3000) {
           const hasSpeedAchievement = userStats.achievements.includes('speed_demon');
           if (!hasSpeedAchievement) {
             // Will be checked in checkAchievements
           }
         }
 
-        updateStreak();
-        checkAchievements();
+        if (!isSilent) {
+          updateStreak();
+          checkAchievements();
+        }
 
-        const timeLabel = formatMinutesShort(input.minutes, language);
-        showToast(
-          formatMessage(copy.toasts.captureSuccess, { time: timeLabel }),
-          'success',
-          '🎯',
-          CP_REWARDS.createReminder
-        );
-        setActiveTab('active');
+        if (!isSilent) {
+          const timeLabel = formatMinutesShort(computedMinutes, language);
+          showToast(
+            formatMessage(copy.toasts.captureSuccess, { time: timeLabel }),
+            'success',
+            '🎯',
+            CP_REWARDS.createReminder
+          );
+          setActiveTab('active');
+        }
 
         return reminder;
       },
 
       completeReminder: (id) => {
-        const { reminders, showToast, addCP, updateStreak, checkAchievements, settings } = get();
+        const { reminders, showToast, addCP, updateStreak, checkAchievements, settings, updateRecurringTaskStats } = get();
         const copy = getCopy(settings.language);
         const reminder = reminders.find((r) => r.id === id);
         if (!reminder || reminder.status !== 'pending') return;
@@ -302,14 +363,26 @@ export const useAppStore = create<AppStore>()(
         if (reminder.notificationId) {
           cancelNotification(reminder.notificationId);
         }
+        if (reminder.beeNotificationIds?.length) {
+          cancelBeeNotifications(reminder.beeNotificationIds);
+        }
 
         set((state) => ({
           reminders: state.reminders.map((r) =>
             r.id === id
-              ? { ...r, status: 'completed' as const, completedAt: now, completedOnTime: isOnTime }
+              ? {
+                ...r,
+                status: 'completed' as const,
+                completedAt: now,
+                completedOnTime: isOnTime,
+                beeNotificationIds: [],
+              }
               : r
           ),
         }));
+        if (reminder.isRecurringInstance && reminder.recurringTaskId) {
+          updateRecurringTaskStats(reminder.recurringTaskId, true);
+        }
 
         // Update stats
         const today = getTodayDate();
@@ -347,6 +420,9 @@ export const useAppStore = create<AppStore>()(
         if (reminder?.notificationId) {
           cancelNotification(reminder.notificationId);
         }
+        if (reminder?.beeNotificationIds?.length) {
+          cancelBeeNotifications(reminder.beeNotificationIds);
+        }
 
         set((state) => ({
           reminders: state.reminders.filter((r) => r.id !== id),
@@ -354,7 +430,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       postponeReminder: (id, minutes) => {
-        const { reminders, showToast, settings } = get();
+        const { reminders, showToast, settings, beeModeSettings } = get();
         const language = settings.language;
         const copy = getCopy(language);
         const reminder = reminders.find((r) => r.id === id);
@@ -363,6 +439,9 @@ export const useAppStore = create<AppStore>()(
         if (reminder.notificationId) {
           cancelNotification(reminder.notificationId);
         }
+        if (reminder.beeNotificationIds?.length) {
+          cancelBeeNotifications(reminder.beeNotificationIds);
+        }
 
         const newTargetTime = Date.now() + minutes * 60 * 1000;
         const newNotificationId = scheduleNotification({
@@ -370,11 +449,23 @@ export const useAppStore = create<AppStore>()(
           body: copy.notifications.body,
           scheduledTime: newTargetTime,
         });
+        const updatedReminder: Reminder = {
+          ...reminder,
+          targetTime: newTargetTime,
+          targetDate: getTargetDate(newTargetTime),
+          notificationId: newNotificationId,
+          beeNotificationIds: [],
+          beeCurrentStage: 0,
+          beeLastNotificationAt: null,
+        };
+        if (reminder.beeModeEnabled) {
+          updatedReminder.beeNotificationIds = scheduleBeeNotifications(updatedReminder, beeModeSettings, language);
+        }
 
         set((state) => ({
           reminders: state.reminders.map((r) =>
             r.id === id
-              ? { ...r, targetTime: newTargetTime, targetDate: getTargetDate(newTargetTime), notificationId: newNotificationId }
+              ? updatedReminder
               : r
           ).sort((a, b) => a.targetTime - b.targetTime),
           modals: { ...state.modals, postponeOptions: null },
@@ -386,10 +477,25 @@ export const useAppStore = create<AppStore>()(
 
       clearExpired: () => {
         const now = Date.now();
+        const { reminders, updateRecurringTaskStats } = get();
+        const expired = reminders.filter(
+          (r) => r.status === 'pending' && r.targetTime < now - TIME.ON_TIME_THRESHOLD * 6
+        );
+        expired.forEach((reminder) => {
+          if (reminder.notificationId) {
+            cancelNotification(reminder.notificationId);
+          }
+          if (reminder.beeNotificationIds?.length) {
+            cancelBeeNotifications(reminder.beeNotificationIds);
+          }
+          if (reminder.isRecurringInstance && reminder.recurringTaskId) {
+            updateRecurringTaskStats(reminder.recurringTaskId, false);
+          }
+        });
         set((state) => ({
           reminders: state.reminders.map((r) =>
             r.status === 'pending' && r.targetTime < now - TIME.ON_TIME_THRESHOLD * 6
-              ? { ...r, status: 'missed' as const }
+              ? { ...r, status: 'missed' as const, beeNotificationIds: [] }
               : r
           ),
         }));
@@ -436,6 +542,7 @@ export const useAppStore = create<AppStore>()(
           text: command.name,
           minutes,
           icon: command.icon,
+          note: command.note ?? undefined,
           sourceCommandId: commandId,
         });
       },
@@ -495,6 +602,218 @@ export const useAppStore = create<AppStore>()(
 
         set((state) => ({
           categories: [...state.categories, newCategory],
+        }));
+      },
+
+      // ====== RECURRING TASK ACTIONS ======
+      addRecurringTask: (task) => {
+        const newTask: RecurringTask = {
+          ...task,
+          id: generateId(),
+          createdAt: Date.now(),
+          stats: createRecurringStats(),
+        };
+
+        set((state) => ({
+          recurringTasks: [...state.recurringTasks, newTask],
+        }));
+
+        get().generateRemindersForToday();
+      },
+
+      updateRecurringTask: (id, updates) => {
+        set((state) => ({
+          recurringTasks: state.recurringTasks.map((task) =>
+            task.id === id ? { ...task, ...updates } : task
+          ),
+        }));
+
+        get().generateRemindersForToday();
+      },
+
+      deleteRecurringTask: (id) => {
+        const { reminders } = get();
+        const remindersToRemove = reminders.filter(
+          (reminder) => reminder.recurringTaskId === id && reminder.status === 'pending'
+        );
+
+        remindersToRemove.forEach((reminder) => {
+          if (reminder.notificationId) {
+            cancelNotification(reminder.notificationId);
+          }
+          if (reminder.beeNotificationIds?.length) {
+            cancelBeeNotifications(reminder.beeNotificationIds);
+          }
+        });
+
+        set((state) => ({
+          recurringTasks: state.recurringTasks.filter((task) => task.id !== id),
+          reminders: state.reminders.filter(
+            (reminder) => !(reminder.recurringTaskId === id && reminder.status === 'pending')
+          ),
+        }));
+      },
+
+      toggleRecurringTaskActive: (id) => {
+        const { recurringTasks, reminders } = get();
+        const task = recurringTasks.find((item) => item.id === id);
+        if (!task) return;
+
+        const nextActive = !task.isActive;
+        const remindersToRemove = nextActive
+          ? []
+          : reminders.filter(
+            (reminder) => reminder.recurringTaskId === id && reminder.status === 'pending'
+          );
+
+        remindersToRemove.forEach((reminder) => {
+          if (reminder.notificationId) {
+            cancelNotification(reminder.notificationId);
+          }
+          if (reminder.beeNotificationIds?.length) {
+            cancelBeeNotifications(reminder.beeNotificationIds);
+          }
+        });
+
+        set((state) => ({
+          recurringTasks: state.recurringTasks.map((item) =>
+            item.id === id ? { ...item, isActive: nextActive } : item
+          ),
+          reminders: nextActive
+            ? state.reminders
+            : state.reminders.filter(
+              (reminder) => !(reminder.recurringTaskId === id && reminder.status === 'pending')
+            ),
+        }));
+
+        if (nextActive) {
+          get().generateRemindersForToday();
+        }
+      },
+
+      generateNextReminder: (taskId) => {
+        const { recurringTasks, reminders, addReminder } = get();
+        const task = recurringTasks.find((item) => item.id === taskId);
+        if (!task || !task.isActive) return;
+
+        const baseline = new Date(Math.max(Date.now(), new Date(task.startDate).getTime()));
+        const nextOccurrence = getNextOccurrence(task, baseline);
+        if (!nextOccurrence) return;
+
+        const dateKey = getDateKey(nextOccurrence);
+        const alreadyExists = reminders.some(
+          (reminder) => reminder.recurringTaskId === task.id && reminder.targetDate === dateKey
+        );
+        if (alreadyExists) return;
+
+        const diffMinutes = Math.max(
+          LIMITS.MIN_MINUTES,
+          Math.round((nextOccurrence.getTime() - Date.now()) / 60000)
+        );
+
+        addReminder({
+          text: task.name,
+          minutes: diffMinutes,
+          targetTime: nextOccurrence.getTime(),
+          targetDate: dateKey,
+          icon: task.icon,
+          note: task.note ?? undefined,
+          beeModeEnabled: task.beeModeEnabled,
+          recurringTaskId: task.id,
+          isRecurringInstance: true,
+          silent: true,
+        });
+
+        set((state) => ({
+          recurringTasks: state.recurringTasks.map((item) =>
+            item.id === task.id
+              ? { ...item, stats: { ...item.stats, totalGenerated: item.stats.totalGenerated + 1 } }
+              : item
+          ),
+        }));
+      },
+
+      generateRemindersForToday: () => {
+        const { recurringTasks, reminders, addReminder } = get();
+        const now = new Date();
+        const todayKey = getDateKey(now);
+        const generatedIds: string[] = [];
+
+        recurringTasks.forEach((task) => {
+          if (!task.isActive) return;
+
+          const baseline = new Date(Math.max(now.getTime(), new Date(task.startDate).getTime()));
+          const nextOccurrence = getNextOccurrence(task, baseline);
+          if (!nextOccurrence) return;
+
+          if (!isSameDay(nextOccurrence, now)) return;
+
+          const alreadyExists = reminders.some(
+            (reminder) => reminder.recurringTaskId === task.id && reminder.targetDate === todayKey
+          );
+          if (alreadyExists) return;
+
+          const diffMinutes = Math.max(
+            LIMITS.MIN_MINUTES,
+            Math.round((nextOccurrence.getTime() - Date.now()) / 60000)
+          );
+
+          addReminder({
+            text: task.name,
+            minutes: diffMinutes,
+            targetTime: nextOccurrence.getTime(),
+            targetDate: todayKey,
+            icon: task.icon,
+            note: task.note ?? undefined,
+            beeModeEnabled: task.beeModeEnabled,
+            recurringTaskId: task.id,
+            isRecurringInstance: true,
+            silent: true,
+          });
+
+          generatedIds.push(task.id);
+        });
+
+        if (generatedIds.length > 0) {
+          set((state) => ({
+            recurringTasks: state.recurringTasks.map((task) =>
+              generatedIds.includes(task.id)
+                ? { ...task, stats: { ...task.stats, totalGenerated: task.stats.totalGenerated + 1 } }
+                : task
+            ),
+          }));
+        }
+      },
+
+      updateRecurringTaskStats: (taskId, completed) => {
+        set((state) => ({
+          recurringTasks: state.recurringTasks.map((task) => {
+            if (task.id !== taskId) return task;
+            const stats = task.stats;
+
+            if (completed) {
+              const newStreak = stats.currentStreak + 1;
+              return {
+                ...task,
+                stats: {
+                  ...stats,
+                  totalCompleted: stats.totalCompleted + 1,
+                  currentStreak: newStreak,
+                  longestStreak: Math.max(stats.longestStreak, newStreak),
+                  lastCompletedAt: Date.now(),
+                },
+              };
+            }
+
+            return {
+              ...task,
+              stats: {
+                ...stats,
+                totalMissed: stats.totalMissed + 1,
+                currentStreak: 0,
+              },
+            };
+          }),
         }));
       },
 
@@ -628,6 +947,66 @@ export const useAppStore = create<AppStore>()(
       },
 
       // ====== SETTINGS ACTIONS ======
+      updateBeeModeSettings: (updates) => {
+        const { beeModeSettings, reminders, settings } = get();
+        const nextSettings = { ...beeModeSettings, ...updates };
+        if (updates.intervals) {
+          nextSettings.intervals = Array.from(
+            new Set(updates.intervals.filter((interval) => interval > 0))
+          ).sort((a, b) => a - b);
+        }
+
+        const language = settings.language;
+        const updatedReminders = reminders.map((reminder) => {
+          if (!reminder.beeModeEnabled || reminder.status !== 'pending') return reminder;
+
+          if (reminder.beeNotificationIds?.length) {
+            cancelBeeNotifications(reminder.beeNotificationIds);
+          }
+
+          if (!nextSettings.enabled) {
+            return { ...reminder, beeNotificationIds: [] };
+          }
+
+          const beeNotificationIds = scheduleBeeNotifications(reminder, nextSettings, language);
+          return { ...reminder, beeNotificationIds };
+        });
+
+        set({
+          beeModeSettings: nextSettings,
+          reminders: updatedReminders,
+        });
+      },
+
+      toggleBeeMode: () => {
+        const { beeModeSettings, reminders, settings } = get();
+        const nextEnabled = !beeModeSettings.enabled;
+        const language = settings.language;
+        const updatedSettings = { ...beeModeSettings, enabled: nextEnabled };
+
+        const updatedReminders = reminders.map((reminder) => {
+          if (reminder.status !== 'pending') return reminder;
+
+          if (reminder.beeNotificationIds?.length) {
+            cancelBeeNotifications(reminder.beeNotificationIds);
+          }
+
+          const updatedReminder = { ...reminder, beeModeEnabled: nextEnabled };
+
+          if (!nextEnabled) {
+            return { ...updatedReminder, beeNotificationIds: [] };
+          }
+
+          const beeNotificationIds = scheduleBeeNotifications(updatedReminder, updatedSettings, language);
+          return { ...updatedReminder, beeNotificationIds };
+        });
+
+        set({
+          beeModeSettings: updatedSettings,
+          reminders: updatedReminders,
+        });
+      },
+
       updateSettings: (updates) => {
         set((state) => ({
           settings: { ...state.settings, ...updates },
@@ -641,29 +1020,53 @@ export const useAppStore = create<AppStore>()(
         reminders: state.reminders,
         commands: state.commands,
         categories: state.categories,
+        recurringTasks: state.recurringTasks,
         dailyStats: state.dailyStats,
         userStats: state.userStats,
         settings: state.settings,
         isPremium: state.isPremium,
+        beeModeSettings: state.beeModeSettings,
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.reminders) {
           const now = Date.now();
           const language = state.settings?.language ?? 'ru';
           const copy = getCopy(language);
+          const beeSettings = state.beeModeSettings ?? defaultBeeModeSettings;
           state.reminders = state.reminders
             .filter((r) => r.status === 'pending' && r.targetTime > now)
             .map((reminder) => {
+              const normalizedReminder: Reminder = {
+                ...reminder,
+                beeModeEnabled: reminder.beeModeEnabled ?? false,
+                beeNotificationIds: reminder.beeNotificationIds ?? [],
+                beeCurrentStage: reminder.beeCurrentStage ?? 0,
+                beeLastNotificationAt: reminder.beeLastNotificationAt ?? null,
+                isRecurringInstance: reminder.isRecurringInstance ?? false,
+              };
               const notificationId = scheduleNotification({
-                title: reminder.text || copy.notifications.title,
+                title: normalizedReminder.text || copy.notifications.title,
                 body: copy.notifications.body,
-                scheduledTime: reminder.targetTime,
+                scheduledTime: normalizedReminder.targetTime,
               });
-              return { ...reminder, notificationId };
+              const beeNotificationIds = normalizedReminder.beeModeEnabled
+                ? scheduleBeeNotifications(normalizedReminder, beeSettings, language)
+                : [];
+              return { ...normalizedReminder, notificationId, beeNotificationIds };
             });
+        }
+        if (state?.recurringTasks) {
+          state.recurringTasks = state.recurringTasks.map((task) => ({
+            ...task,
+            isActive: task.isActive ?? true,
+            stats: task.stats ?? createRecurringStats(),
+          }));
         }
         // Update streak on load
         if (state) {
+          if (!state.beeModeSettings) {
+            state.beeModeSettings = defaultBeeModeSettings;
+          }
           state.updateStreak();
           state.clearExpired();
         }

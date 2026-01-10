@@ -11,6 +11,7 @@ export function CapturePage() {
   const { addReminder, userStats, dailyStats } = useAppStore();
   const { copy, formatCount, formatMessage, language } = useI18n();
   const [text, setText] = useState('');
+  const [note, setNote] = useState('');
   const [selectedRelative, setSelectedRelative] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -46,14 +47,18 @@ export function CapturePage() {
 
     if (targetMinutes < 1) targetMinutes = 1;
 
+    const noteValue = note.trim();
+
     addReminder({
       text: text.trim(),
       minutes: targetMinutes,
       icon: '💭',
       targetDate: targetDateOverride,
+      note: noteValue,
     });
 
     setText('');
+    setNote('');
     setSelectedRelative(null);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2000);
@@ -98,13 +103,24 @@ export function CapturePage() {
       </div>
 
       <div className="space-y-6">
-        <div className="relative">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={copy.capture.placeholder}
-            className="w-full h-32 bg-white border border-neutral-200 rounded-3xl p-5 text-base font-medium focus:outline-none focus:ring-2 focus:ring-neutral-900/5 transition-all resize-none notion-shadow placeholder:text-neutral-300"
-          />
+        <div className="py-2 space-y-3">
+          <div className="flex gap-3 items-start">
+            <div className="mt-1.5 w-5 h-5 rounded-full border border-neutral-200 shrink-0" />
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={copy.capture.placeholder}
+              className="flex-1 min-h-[96px] bg-transparent border-0 p-0 text-lg font-semibold text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 resize-none leading-relaxed"
+            />
+          </div>
+          <div className="pl-8">
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={copy.capture.notePlaceholder}
+              className="w-full min-h-[64px] bg-transparent border-0 p-0 text-sm font-medium text-neutral-600 placeholder:text-neutral-400 focus:outline-none focus:ring-0 resize-none leading-relaxed"
+            />
+          </div>
         </div>
 
         {/* Quick Times */}

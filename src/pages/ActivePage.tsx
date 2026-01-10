@@ -4,6 +4,7 @@ import { Check, Trash2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useI18n } from '@/hooks/useI18n';
 import { formatDateShort, formatMinutesShort, formatTime } from '@/utils/time';
+import type { Reminder } from '@/types';
 
 export function ActivePage() {
   const { reminders, completeReminder, removeReminder } = useAppStore();
@@ -95,9 +96,16 @@ export function ActivePage() {
             {completedReminders.slice(0, 3).map((rem) => (
               <div key={rem.id} className="flex items-center gap-3 py-1">
                 <span className="text-lg grayscale">{rem.icon}</span>
-                <span className="text-sm font-medium line-through">
-                  {rem.text || copy.active.reminderFallback}
-                </span>
+                <div className="min-w-0">
+                  <span className="text-sm font-medium line-through">
+                    {rem.text || copy.active.reminderFallback}
+                  </span>
+                  {rem.note && (
+                    <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2">
+                      {rem.note}
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -117,13 +125,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 interface ReminderCardProps {
-  reminder: {
-    id: string;
-    text: string | null;
-    icon: string;
-    targetTime: number;
-    targetDate: string;
-  };
+  reminder: Reminder;
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -131,6 +133,7 @@ interface ReminderCardProps {
 function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
   const { copy, language, formatCount } = useI18n();
   const [timeLeft, setTimeLeft] = useState(reminder.targetTime - Date.now());
+  const [showDelete, setShowDelete] = useState(false);
   const todayStr = new Date().toISOString().split('T')[0];
   const showDate = reminder.targetDate && reminder.targetDate !== todayStr;
   const timeLabel = formatTime(reminder.targetTime, language);
@@ -144,6 +147,13 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
   }, [reminder.targetTime]);
 
   const minutesLeft = Math.floor(timeLeft / 60000);
+  const isDueSoon = timeLeft > 0 && timeLeft < 15 * 60000;
+
+  useEffect(() => {
+    if (!showDelete) return;
+    const timeout = window.setTimeout(() => setShowDelete(false), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [showDelete]);
 
   const getTimeLabel = () => {
     if (timeLeft < 0) return copy.active.missed;
@@ -168,36 +178,63 @@ function ReminderCard({ reminder, onComplete, onDelete }: ReminderCardProps) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, x: 100 }}
-      className="bg-white border border-neutral-200 rounded-2xl p-4 notion-shadow flex items-center gap-4 group transition-all hover:border-neutral-300"
+      className="bg-white border border-neutral-200 rounded-2xl p-4 notion-shadow group transition-all hover:border-neutral-300"
+      onPointerDown={() => setShowDelete(true)}
     >
-      <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div className="w-12 h-12 bg-neutral-50 rounded-xl flex items-center justify-center text-xl">
-          {reminder.icon}
-        </div>
-        <div className="min-w-0">
-          <h4 className="font-semibold text-neutral-900 truncate">
-            {reminder.text || copy.active.reminderFallback}
-          </h4>
-          <div className="text-xs text-neutral-500 mt-0.5 flex items-center gap-1 font-medium">
-            <Clock size={12} />
-            <span>{showDate ? `${dateLabel} · ${timeLabel}` : timeLabel}</span>
-            <span>·</span>
-            <span className={timeLeft < 15 * 60000 ? 'text-orange-500' : ''}>
-              {timeLeft < 0 ? getTimeLabel() : `${copy.active.inPrefix} ${getTimeLabel()}`}
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button
-          onClick={() => onComplete(reminder.id)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onComplete(reminder.id);
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
           className="p-2 text-neutral-300 hover:text-emerald-500 transition-colors"
         >
-          <Check size={22} />
+          <Check size={20} />
         </button>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-neutral-50 rounded-xl flex items-center justify-center text-xl shrink-0">
+              {reminder.icon}
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <h4 className="font-semibold text-neutral-900 text-base leading-snug line-clamp-2">
+                {reminder.text || copy.active.reminderFallback}
+              </h4>
+              {reminder.isRecurringInstance && <span className="text-xs">🔄</span>}
+              {reminder.beeModeEnabled && <span className="text-xs">🐝</span>}
+            </div>
+          </div>
+
+          {reminder.note && (
+            <p className="text-sm text-neutral-800 mt-2 leading-relaxed whitespace-pre-wrap break-words line-clamp-2">
+              {reminder.note}
+            </p>
+          )}
+
+          <div className="mt-2 flex items-center gap-2 text-xs font-medium text-neutral-500">
+            {showDate ? (
+              <span>
+                {dateLabel} · {timeLabel}
+              </span>
+            ) : (
+              <span className={isDueSoon ? 'text-orange-500' : ''}>
+                {timeLeft < 0 ? getTimeLabel() : `${copy.active.inPrefix} ${getTimeLabel()}`}
+              </span>
+            )}
+          </div>
+        </div>
+
         <button
-          onClick={() => onDelete(reminder.id)}
-          className="p-2 text-neutral-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(reminder.id);
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
+          className={`p-2 text-neutral-300 hover:text-rose-500 transition-colors ${
+            showDelete ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         >
           <Trash2 size={18} />
         </button>

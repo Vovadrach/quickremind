@@ -4,6 +4,7 @@ import { Bell, Zap, Shield, HelpCircle, Share2, Globe, Star } from 'lucide-react
 import { LEVEL_THRESHOLDS, APP_VERSION } from '@/constants';
 import { BottomSheet } from '@/components/ui/Modal';
 import { useI18n } from '@/hooks/useI18n';
+import { BeeModeSettingsCard } from '@/components/settings/BeeModeSettingsCard';
 
 export function ProfilePage() {
   const { userStats, settings, updateSettings, isPremium } = useAppStore();
@@ -132,6 +133,10 @@ export function ProfilePage() {
               value="🔒 PRO"
               onClick={handleDarkModeClick}
             />
+          </div>
+
+          <div className="pt-4">
+            <BeeModeSettingsCard />
           </div>
 
           <div className="pt-4">
